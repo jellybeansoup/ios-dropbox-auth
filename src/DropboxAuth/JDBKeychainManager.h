@@ -23,14 +23,19 @@
 //
 
 @import Foundation;
-@import UIKit;
 
-//! Project version number for DropboxAuth.
-extern double DropboxAuthVersionNumber;
+@interface JDBKeychainManager : NSObject
 
-//! Project version string for DropboxAuth.
-extern const unsigned char DropboxAuthVersionString[];
++ (BOOL)setValue:(NSString *)value forKey:(NSString *)key;
 
-//! Import public headers
-#import <DropboxAuth/JDBAuthManager.h>
-#import <DropboxAuth/JDBAccessToken.h>
++ (NSString *)valueForKey:(NSString *)key;
+
++ (BOOL)removeValueForKey:(NSString *)key;
+
++ (NSArray<NSString *> *)getAll;
+
++ (BOOL)clearAll;
+
++ (void)jsm_listAllItems;
+
+@end

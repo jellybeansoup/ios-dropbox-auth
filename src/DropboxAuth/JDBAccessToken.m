@@ -22,15 +22,27 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-@import Foundation;
-@import UIKit;
-
-//! Project version number for DropboxAuth.
-extern double DropboxAuthVersionNumber;
-
-//! Project version string for DropboxAuth.
-extern const unsigned char DropboxAuthVersionString[];
-
-//! Import public headers
-#import <DropboxAuth/JDBAuthManager.h>
 #import <DropboxAuth/JDBAccessToken.h>
+
+@implementation JDBAccessToken
+
+- (instancetype)initWithAccessToken:(NSString *)accessToken uid:(NSString *)uid {
+	if( ( self = [super init] ) ) {
+		_accessToken = accessToken;
+		_uid = uid;
+	}
+	return self;
+}
+
+- (NSString *)description {
+	return self.accessToken;
+}
+
+- (NSURLRequest *)URLRequestBySigningURLRequest:(NSURLRequest *)request {
+	NSMutableURLRequest *mutableRequest = [request mutableCopy];
+	NSString *authorization = [NSString stringWithFormat:@"Bearer %@",self.accessToken];
+	[mutableRequest addValue:authorization forHTTPHeaderField:@"Authorization"];
+	return [mutableRequest copy];
+}
+
+@end

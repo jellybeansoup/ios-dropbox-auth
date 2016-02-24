@@ -23,9 +23,12 @@
 //
 
 @import UIKit;
+@import DropboxAuth;
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
+
+@property (strong, nonatomic, readonly) JDBAuthManager *dropboxAuthManager;
 
 @end

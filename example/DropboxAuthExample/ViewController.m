@@ -22,9 +22,85 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#import "ViewController.h"
 @import DropboxAuth;
+#import "ViewController.h"
+#import "AppDelegate.h"
+
+@interface ViewController ()
+
+@property (nonatomic, strong) IBOutlet UIButton *connectButton;
+
+@property (nonatomic, strong) IBOutlet UIView *accountView;
+
+@property (nonatomic, strong) IBOutlet UILabel *accountLabel;
+
+@end
 
 @implementation ViewController
+
+- (void)viewWillAppear:(BOOL)animated {
+	[super viewWillAppear:animated];
+
+	JDBAuthManager *authManager = [(AppDelegate *)[[UIApplication sharedApplication] delegate] dropboxAuthManager];
+	JDBAccessToken *accessToken = [authManager getFirstAccessToken];
+	if( accessToken != nil ) {
+		self.connectButton.hidden = YES;
+		self.accountView.hidden = NO;
+		self.accountLabel.text = @"Loading account details…";
+
+		NSURL *url = [NSURL URLWithString:@"https://api.dropboxapi.com/2/users/get_current_account"];
+		NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+		request.HTTPMethod = @"POST";
+
+		NSURLRequest *signedRequest = [accessToken URLRequestBySigningURLRequest:request];
+		NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:signedRequest completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+
+			dispatch_async(dispatch_get_main_queue(), ^{
+				NSData *convertedData = [NSData dataWithBytes:data.bytes length:data.length];
+				id responseObject = [NSJSONSerialization JSONObjectWithData:convertedData options:0 error:nil];
+				if( responseObject != nil && [responseObject isKindOfClass:[NSDictionary class]] ) {
+					NSDictionary *responseDictionary = (NSDictionary *)responseObject;
+					self.accountLabel.text = responseDictionary[@"email"];
+				}
+				else if( responseObject == nil ) {
+					self.accountLabel.text = [[NSString alloc] initWithData:convertedData encoding:NSUTF8StringEncoding];
+				}
+				else {
+					self.accountLabel.text = @"Failed for unknown reasons.";
+				}
+			});
+
+		}];
+
+		[task resume];
+	}
+
+	else {
+		self.connectButton.hidden = NO;
+		self.accountView.hidden = YES;
+	}
+}
+
+- (IBAction)connect:(id)sender {
+	JDBAuthManager *authManager = [(AppDelegate *)[[UIApplication sharedApplication] delegate] dropboxAuthManager];
+
+	if( ! [authManager authorizeWithDropboxApp] ) {
+		[self presentViewController:authManager.authViewController animated:YES completion:nil];
+	}
+}
+
+- (IBAction)disconnect:(id)sender {
+	JDBAuthManager *authManager = [(AppDelegate *)[[UIApplication sharedApplication] delegate] dropboxAuthManager];
+	[authManager clearStoredAccessTokens];
+
+	if( [authManager getFirstAccessToken] == nil ) {
+		self.connectButton.hidden = NO;
+		self.accountView.hidden = YES;
+	}
+
+	else {
+
+	}
+}
 
 @end

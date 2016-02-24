@@ -26,4 +26,15 @@
 
 @implementation AppDelegate
 
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+	_dropboxAuthManager = [[JDBAuthManager alloc] initWithAppKey:@"d25u9w2pgql046o"];
+	return YES;
+}
+
+- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<NSString *,id> *)options {
+	NSError *error;
+	BOOL success = [self.dropboxAuthManager handleRedirectURL:url error:&error];
+	return success;
+}
+
 @end

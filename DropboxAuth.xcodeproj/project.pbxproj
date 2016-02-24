@@ -22,6 +22,12 @@
 
 /* Begin PBXBuildFile section */
 		A1A787431C7BEE310095A0EF /* DropboxAuth.h in Headers */ = {isa = PBXBuildFile; fileRef = A171353818500A1A00E56C4D /* DropboxAuth.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		A1A787481C7BFC310095A0EF /* JDBAuthManager.h in Headers */ = {isa = PBXBuildFile; fileRef = A1A787461C7BFC310095A0EF /* JDBAuthManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		A1A787491C7BFC310095A0EF /* JDBAuthManager.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A787471C7BFC310095A0EF /* JDBAuthManager.m */; };
+		A1A7874C1C7C12450095A0EF /* JDBAccessToken.h in Headers */ = {isa = PBXBuildFile; fileRef = A1A7874A1C7C12450095A0EF /* JDBAccessToken.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		A1A7874D1C7C12450095A0EF /* JDBAccessToken.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A7874B1C7C12450095A0EF /* JDBAccessToken.m */; };
+		A1A787501C7C589F0095A0EF /* JDBKeychainManager.h in Headers */ = {isa = PBXBuildFile; fileRef = A1A7874E1C7C589F0095A0EF /* JDBKeychainManager.h */; };
+		A1A787511C7C589F0095A0EF /* JDBKeychainManager.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A7874F1C7C589F0095A0EF /* JDBKeychainManager.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +39,12 @@
 		A171353818500A1A00E56C4D /* DropboxAuth.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DropboxAuth.h; sourceTree = "<group>"; };
 		A1A787381C7BED9C0095A0EF /* DropboxAuth.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = DropboxAuth.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1A7873C1C7BED9C0095A0EF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A1A787461C7BFC310095A0EF /* JDBAuthManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JDBAuthManager.h; sourceTree = "<group>"; };
+		A1A787471C7BFC310095A0EF /* JDBAuthManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JDBAuthManager.m; sourceTree = "<group>"; };
+		A1A7874A1C7C12450095A0EF /* JDBAccessToken.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JDBAccessToken.h; sourceTree = "<group>"; };
+		A1A7874B1C7C12450095A0EF /* JDBAccessToken.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JDBAccessToken.m; sourceTree = "<group>"; };
+		A1A7874E1C7C589F0095A0EF /* JDBKeychainManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JDBKeychainManager.h; sourceTree = "<group>"; };
+		A1A7874F1C7C589F0095A0EF /* JDBKeychainManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JDBKeychainManager.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +91,12 @@
 			isa = PBXGroup;
 			children = (
 				A171353818500A1A00E56C4D /* DropboxAuth.h */,
+				A1A787461C7BFC310095A0EF /* JDBAuthManager.h */,
+				A1A787471C7BFC310095A0EF /* JDBAuthManager.m */,
+				A1A7874A1C7C12450095A0EF /* JDBAccessToken.h */,
+				A1A7874B1C7C12450095A0EF /* JDBAccessToken.m */,
+				A1A7874E1C7C589F0095A0EF /* JDBKeychainManager.h */,
+				A1A7874F1C7C589F0095A0EF /* JDBKeychainManager.m */,
 				A1A7873C1C7BED9C0095A0EF /* Info.plist */,
 			);
 			name = DropboxAuth;
@@ -101,7 +119,10 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1A787501C7C589F0095A0EF /* JDBKeychainManager.h in Headers */,
+				A1A787481C7BFC310095A0EF /* JDBAuthManager.h in Headers */,
 				A1A787431C7BEE310095A0EF /* DropboxAuth.h in Headers */,
+				A1A7874C1C7C12450095A0EF /* JDBAccessToken.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -190,6 +211,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1A787491C7BFC310095A0EF /* JDBAuthManager.m in Sources */,
+				A1A787511C7C589F0095A0EF /* JDBKeychainManager.m in Sources */,
+				A1A7874D1C7C12450095A0EF /* JDBAccessToken.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

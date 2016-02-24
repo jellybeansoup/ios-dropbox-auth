@@ -23,14 +23,18 @@
 //
 
 @import Foundation;
-@import UIKit;
 
-//! Project version number for DropboxAuth.
-extern double DropboxAuthVersionNumber;
+@interface JDBAccessToken : NSObject
 
-//! Project version string for DropboxAuth.
-extern const unsigned char DropboxAuthVersionString[];
+/// The access token string.
+@property (nonatomic, strong, readonly) NSString *accessToken;
 
-//! Import public headers
-#import <DropboxAuth/JDBAuthManager.h>
-#import <DropboxAuth/JDBAccessToken.h>
+/// The associated user.
+@property (nonatomic, strong, readonly) NSString *uid;
+
+/// Create an instance of the receiver with the access token and uid.
+- (instancetype)initWithAccessToken:(NSString *)accessToken uid:(NSString *)uid;
+
+- (NSURLRequest *)URLRequestBySigningURLRequest:(NSURLRequest *)request;
+
+@end

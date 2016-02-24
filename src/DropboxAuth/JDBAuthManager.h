@@ -64,7 +64,7 @@ typedef NS_ENUM(NSInteger, JSMOAuth2Error) {
 
 /// Opens the Dropbox app (if possible) with the OAuth2 authorization request.
 /// @return Flag to indicate if the app could be opened or not. If false, fall back to presenting the `authViewController`.
-- (BOOL)authorizeWithDropboxApp;
+- (BOOL)authorizeWithDropboxApp NS_EXTENSION_UNAVAILABLE_IOS("Use the `authViewController` where appropriate instead.");
 
 /// View controller for presenting the OAuth2 authorization request page.
 @property (nonatomic, strong, readonly) __kindof UIViewController *authViewController;
@@ -72,7 +72,7 @@ typedef NS_ENUM(NSInteger, JSMOAuth2Error) {
 /// Present the OAuth2 authorization request page by presenting a web view controller modally.
 /// This is the equivalent of the Dropbox SDK's method of the same name.
 /// @param controller The controller to present from.
-- (void)authorizeFromController:(UIViewController *)controller;
+- (void)authorizeFromController:(UIViewController *)controller NS_EXTENSION_UNAVAILABLE_IOS("Use the `authViewController` where appropriate instead.");
 
 /// Try to handle a redirect back into the application
 /// @param url The URL to attempt to handle.

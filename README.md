@@ -1,5 +1,7 @@
 #Dropbox Auth
 
+In occasions when the official SDK for Dropbox is too heavy or too restricting, it's usually preferable to access the HTTP API directly. The problem is, you then have to deal with the OAuth flow and storage of the credentials by hand, or worse, utilise the Dropbox SDK for just that part of the process (and given that the new one relies on Alamofire, you're having to embed a framework you never actually use). This library is designed to _just_ handle that aspect, and allows you to sign your own `NSURLRequest` objects for the API calls, allowing you to handle them any way you want.
+
 ##Released under the BSD License
 
 Copyright © 2016 Daniel Farrelly

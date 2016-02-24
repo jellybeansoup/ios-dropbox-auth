@@ -26,7 +26,7 @@
 		A1A787491C7BFC310095A0EF /* JDBAuthManager.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A787471C7BFC310095A0EF /* JDBAuthManager.m */; };
 		A1A7874C1C7C12450095A0EF /* JDBAccessToken.h in Headers */ = {isa = PBXBuildFile; fileRef = A1A7874A1C7C12450095A0EF /* JDBAccessToken.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		A1A7874D1C7C12450095A0EF /* JDBAccessToken.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A7874B1C7C12450095A0EF /* JDBAccessToken.m */; };
-		A1A787501C7C589F0095A0EF /* JDBKeychainManager.h in Headers */ = {isa = PBXBuildFile; fileRef = A1A7874E1C7C589F0095A0EF /* JDBKeychainManager.h */; };
+		A1A787501C7C589F0095A0EF /* JDBKeychainManager.h in Headers */ = {isa = PBXBuildFile; fileRef = A1A7874E1C7C589F0095A0EF /* JDBKeychainManager.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		A1A787511C7C589F0095A0EF /* JDBKeychainManager.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A7874F1C7C589F0095A0EF /* JDBKeychainManager.m */; };
 /* End PBXBuildFile section */
 
@@ -320,7 +320,7 @@
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				INFOPLIST_FILE = src/DropboxAuth/Info.plist;
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				INSTALL_PATH = "@executable_path/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				MTL_ENABLE_DEBUG_INFO = YES;
@@ -350,8 +350,9 @@
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				INFOPLIST_FILE = src/DropboxAuth/Info.plist;
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				INSTALL_PATH = "@executable_path/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				LD_DYLIB_INSTALL_NAME = "@executable_path/Frameworks/$(EXECUTABLE_PATH)";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jellystyle.DropboxAuth;
@@ -391,6 +392,7 @@
 				A1A7873F1C7BED9C0095A0EF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

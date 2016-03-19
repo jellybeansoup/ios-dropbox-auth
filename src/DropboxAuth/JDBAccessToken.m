@@ -38,11 +38,21 @@
 	return self.accessToken;
 }
 
-- (NSURLRequest *)URLRequestBySigningURLRequest:(NSURLRequest *)request {
+- (NSURLRequest *)signedRequestFromRequest:(NSURLRequest *)request {
 	NSMutableURLRequest *mutableRequest = [request mutableCopy];
 	NSString *authorization = [NSString stringWithFormat:@"Bearer %@",self.accessToken];
 	[mutableRequest addValue:authorization forHTTPHeaderField:@"Authorization"];
 	return [mutableRequest copy];
+}
+
+- (NSURLRequest *)signedRequestWithURL:(NSURL *)url cachePolicy:(NSURLRequestCachePolicy)cachePolicy timeoutInterval:(NSTimeInterval)timeoutInterval {
+	NSURLRequest *request = [NSURLRequest requestWithURL:url cachePolicy:cachePolicy timeoutInterval:timeoutInterval];
+	return [self signedRequestFromRequest:request];
+}
+
+- (NSURLRequest *)signedRequestWithURL:(NSURL *)url {
+	NSURLRequest *request = [NSURLRequest requestWithURL:url];
+	return [self signedRequestFromRequest:request];
 }
 
 @end

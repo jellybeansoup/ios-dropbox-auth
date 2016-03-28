@@ -43,7 +43,22 @@ typedef NS_ENUM(NSInteger, JSMOAuth2Error) {
 	JSMOAuth2ErrorTemporarilyUnavailable,
 };
 
+@class JDBAuthManager;
+
+@protocol JDBAuthManagerDelegate <NSObject>
+@optional
+
+/// Called when the auth manager adds a new access token.
+- (void)authManager:(JDBAuthManager *)authManager didAddAccessToken:(JDBAccessToken *)accessToken;
+
+/// Called when the auth manager removes an access token.
+- (void)authManager:(JDBAuthManager *)authManager didRemoveAccessToken:(JDBAccessToken *)accessToken;
+
+@end
+
 @interface JDBAuthManager : NSObject
+
+@property (nonatomic, strong) id<JDBAuthManagerDelegate> delegate;
 
 @property (nonatomic, strong, readonly) NSString *appKey;
 

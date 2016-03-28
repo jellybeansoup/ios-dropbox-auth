@@ -278,7 +278,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 #pragma mark - Handling access tokens
 
-- (NSDictionary<NSString *,JDBAccessToken *> *)getAllAccessTokens {
+- (NSDictionary<NSString *,JDBAccessToken *> *)accessTokens {
 	NSArray *users = [JDBKeychainManager getAll];
 	NSMutableDictionary *ret = [NSMutableDictionary dictionary];
 	for( NSString *user in users ) {
@@ -290,11 +290,16 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 	return [ret copy];
 }
 
-- (BOOL)hasStoredAccessTokens {
-	return [[self getAllAccessTokens] count] != 0;
+- (JDBAccessToken *)firstAccessToken {
+	NSString *uid = [[JDBKeychainManager getAll] firstObject];
+	return [self accessTokenForUserID:uid];
 }
 
-- (JDBAccessToken *)getAccessToken:(NSString *)uid {
+- (BOOL)hasAccessTokens {
+	return [[self accessTokens] count] != 0;
+}
+
+- (JDBAccessToken *)accessTokenForUserID:(NSString *)uid {
 	NSString *accessToken = [JDBKeychainManager valueForKey:uid];
 	if( accessToken != nil ) {
 		return [[JDBAccessToken alloc] initWithAccessToken:accessToken uid:uid];
@@ -305,21 +310,39 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 	}
 }
 
-- (BOOL)clearStoredAccessToken:(JDBAccessToken *)token {
-	return [JDBKeychainManager removeValueForKey:token.uid];
+- (BOOL)addAccessToken:(JDBAccessToken *)token {
+	BOOL success = [JDBKeychainManager setValue:token.accessToken forKey:token.uid];
+
+	if( success && self.delegate && [self.delegate respondsToSelector:@selector(authManager:didAddAccessToken:)] ) {
+		[self.delegate authManager:self didAddAccessToken:token];
+	}
+
+	return success;
 }
 
-- (BOOL)clearStoredAccessTokens {
-	return [JDBKeychainManager clearAll];
+- (BOOL)removeAccessToken:(JDBAccessToken *)token {
+	BOOL success = [JDBKeychainManager removeValueForKey:token.uid];
+
+	if( success && self.delegate && [self.delegate respondsToSelector:@selector(authManager:didRemoveAccessToken:)] ) {
+		[self.delegate authManager:self didRemoveAccessToken:token];
+	}
+	
+	return success;
 }
 
-- (BOOL)storeAccessToken:(JDBAccessToken *)token {
-	return [JDBKeychainManager setValue:token.accessToken forKey:token.uid];
-}
+- (BOOL)removeAllAccessTokens {
+	NSArray *accessTokens = self.accessTokens.allValues;
 
-- (JDBAccessToken *)getFirstAccessToken {
-	NSString *uid = [[JDBKeychainManager getAll] firstObject];
-	return [self getAccessToken:uid];
+	BOOL success = [JDBKeychainManager clearAll];
+
+	for( JDBAccessToken *token in accessTokens ) {
+		if( [self.accessTokens.allValues containsObject:token] ) continue;
+		if( self.delegate && [self.delegate respondsToSelector:@selector(authManager:didRemoveAccessToken:)] ) {
+			[self.delegate authManager:self didRemoveAccessToken:token];
+		}
+	}
+
+	return success;
 }
 
 #pragma mark - Safari view controller delegate

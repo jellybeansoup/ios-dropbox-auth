@@ -62,6 +62,8 @@ typedef NS_ENUM(NSInteger, JSMOAuth2Error) {
 
 @property (nonatomic, strong, readonly) NSString *appKey;
 
+@property (nonatomic, strong, readonly) NSString *appSecret;
+
 @property (nonatomic, strong, readonly) NSString *host;
 
 // @name Instance
@@ -74,6 +76,17 @@ typedef NS_ENUM(NSInteger, JSMOAuth2Error) {
 /// Create an auth manager with the given app key.
 /// @param appKey The app key to use for authorisation.
 - (instancetype)initWithAppKey:(NSString *)appKey;
+
+/// Create an auth manager with the given app key and host name.
+/// @param appKey The app key to use for authorisation.
+/// @param appSecret The app secret to use for authorisation (optional).
+/// @param host The host name to use when accessing Dropbox.
+- (instancetype)initWithAppKey:(NSString *)appKey andSecret:(NSString *)appSecret host:(NSString *)host;
+
+/// Create an auth manager with the given app key.
+/// @param appKey The app key to use for authorisation (optional).
+/// @param appSecret The app secret to use for authorisation.
+- (instancetype)initWithAppKey:(NSString *)appKey andSecret:(NSString *)appSecret;
 
 // @name Handling authorisation
 
@@ -96,35 +109,35 @@ typedef NS_ENUM(NSInteger, JSMOAuth2Error) {
 
 // @name Handling access tokens
 
-/// Retrieve all stored access tokens
-/// @return A dictionary mapping users to their access tokens
-- (NSDictionary<NSString *,JDBAccessToken *> *)getAllAccessTokens;
-
 /// Check if there are any stored access tokens
 /// @return Whether there are stored access tokens
-- (BOOL)hasStoredAccessTokens;
+@property (nonatomic, readonly) BOOL hasAccessTokens;
+
+/// Retrieve all stored access tokens
+/// @return A dictionary mapping users to their access tokens
+@property (nonatomic, strong, readonly) NSDictionary<NSString *,JDBAccessToken *> *accessTokens;
+
+/// Utility function to return an arbitrary access token
+/// @return the "first" access token found, if any (otherwise `nil`)
+@property (nonatomic, strong, readonly) JDBAccessToken *firstAccessToken;
 
 /// Retrieve the access token for a particular user identifier
-/// @param user The user whose token to retrieve
+/// @param uid The user whose token to retrieve
 /// @return An access token if present, otherwise `nil`.
-- (JDBAccessToken *)getAccessToken:(NSString *)uid;
-
-/// Delete a specific access token
-/// @param token The access token to delete
-/// @return whether the operation succeeded
-- (BOOL)clearStoredAccessToken:(JDBAccessToken *)token;
-
-/// Delete all stored access tokens
-/// @return whether the operation succeeded
-- (BOOL)clearStoredAccessTokens;
+- (JDBAccessToken *)accessTokenForUserID:(NSString *)uid;
 
 /// Save an access token
 /// @param token The access token to save
 /// @return whether the operation succeeded
-- (BOOL)storeAccessToken:(JDBAccessToken *)token;
+- (BOOL)addAccessToken:(JDBAccessToken *)token;
 
-/// Utility function to return an arbitrary access token
-/// @return the "first" access token found, if any (otherwise `nil`)
-- (JDBAccessToken *)getFirstAccessToken;
+/// Delete a specific access token
+/// @param token The access token to delete
+/// @return whether the operation succeeded
+- (BOOL)removeAccessToken:(JDBAccessToken *)token;
+
+/// Delete all stored access tokens
+/// @return whether the operation succeeded
+- (BOOL)removeAllAccessTokens;
 
 @end

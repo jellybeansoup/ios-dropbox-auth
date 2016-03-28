@@ -23,6 +23,7 @@
 //
 
 @import SafariServices;
+#import <CommonCrypto/CommonHMAC.h>
 #import <DropboxAuth/JDBAuthManager.h>
 #import <DropboxAuth/JDBKeychainManager.h>
 
@@ -67,18 +68,32 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 #pragma mark - Instance
 
+- (instancetype)initWithAppKey:(NSString *)appKey andSecret:(NSString *)appSecret host:(NSString *)host {
+	if( ( self = [super init] ) ) {
+		_appKey = appKey;
+		_appSecret = appSecret;
+		_host = host;
+		_redirectURL = [NSURL URLWithString:[NSString stringWithFormat:@"db-%@://2/token",appKey]];
+		_dauthRedirectURL = [NSURL URLWithString:[NSString stringWithFormat:@"db-%@://1/connect",appKey]];
+
+		[self removeAllAccessTokens];
+
+		[self _migrateFromSync];
+		[self _migrateFromSDKv1];
+	}
+	return self;
+}
+
+- (instancetype)initWithAppKey:(NSString *)appKey andSecret:(NSString *)appSecret {
+	return [self initWithAppKey:appKey andSecret:appSecret host:@"www.dropbox.com"];
+}
+
 - (instancetype)initWithAppKey:(NSString *)appKey host:(NSString *)host {
-    if( ( self = [super init] ) ) {
-        _appKey = appKey;
-        _host = host;
-        _redirectURL = [NSURL URLWithString:[NSString stringWithFormat:@"db-%@://2/token",appKey]];
-        _dauthRedirectURL = [NSURL URLWithString:[NSString stringWithFormat:@"db-%@://1/connect",appKey]];
-    }
-    return self;
+	return [self initWithAppKey:appKey andSecret:nil host:@"www.dropbox.com"];
 }
 
 - (instancetype)initWithAppKey:(NSString *)appKey {
-    return [self initWithAppKey:appKey host:@"www.dropbox.com"];
+	return [self initWithAppKey:appKey andSecret:nil host:@"www.dropbox.com"];
 }
 
 #pragma mark - Handling authorisation
@@ -355,6 +370,139 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 	[self.safariViewController dismissViewControllerAnimated:YES completion:^{
 		_safariViewController = nil;
 	}];
+}
+
+#pragma mark - Migration
+
+- (void)_migrateFromSync {
+	// https://blogs.dropbox.com/developers/2015/05/migrating-sync-sdk-access-tokens-to-core-sdk/
+	NSString *keychainPrefix = NSBundle.mainBundle.bundleIdentifier;
+	NSString *keychainId = [NSString stringWithFormat:@"%@.dropbox-sync.auth", keychainPrefix];
+	NSDictionary *keychainDict = @{(__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
+								   (__bridge id)kSecAttrService: keychainId,
+								   (__bridge id)kSecMatchLimit: (__bridge id)kSecMatchLimitOne,
+								   (__bridge id)kSecReturnAttributes: (__bridge id)kCFBooleanTrue,
+								   (__bridge id)kSecReturnData: (__bridge id)kCFBooleanTrue};
+
+	CFDictionaryRef result = NULL;
+	OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)keychainDict,
+										  (CFTypeRef *)&result);
+	NSDictionary *attrDict = (__bridge_transfer NSDictionary *)result;
+	NSData *foundValue = [attrDict objectForKey:(__bridge id)kSecValueData];
+
+	if (status == noErr && foundValue) {
+		NSDictionary *savedCreds = [NSKeyedUnarchiver unarchiveObjectWithData:foundValue];
+		NSArray *credsForApp = (NSArray *)savedCreds[@"accounts"][self.appKey];
+		for( NSDictionary *credsForUser in credsForApp ) {
+			NSString *uid = credsForUser[@"userId"];
+			NSString *token = credsForUser[@"token"];
+			NSString *secret = credsForUser[@"secret"];
+			[self migrateOAuth1Token:token andSecret:secret completion:^(NSString *newToken) {
+				if( newToken == nil ) return;
+				[self addAccessToken:[[JDBAccessToken alloc] initWithAccessToken:newToken uid:uid]];
+			}];
+		}
+	}
+}
+
+- (void)_migrateFromSDKv1 {
+	NSString *keychainPrefix = NSBundle.mainBundle.bundleIdentifier;
+	NSString *keychainId = [NSString stringWithFormat:@"%@.dropbox.auth", keychainPrefix];
+	NSDictionary *keychainDict = @{(__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
+								   (__bridge id)kSecAttrService: keychainId,
+								   (__bridge id)kSecMatchLimit: (__bridge id)kSecMatchLimitOne,
+								   (__bridge id)kSecReturnAttributes: (__bridge id)kCFBooleanTrue,
+								   (__bridge id)kSecReturnData: (__bridge id)kCFBooleanTrue};
+
+	CFDictionaryRef result = NULL;
+	OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)keychainDict,
+										  (CFTypeRef *)&result);
+	NSDictionary *attrDict = (__bridge_transfer NSDictionary *)result;
+	NSData *foundValue = [attrDict objectForKey:(__bridge id)kSecValueData];
+
+	if (status == noErr && foundValue) {
+		NSDictionary *savedCreds = [NSKeyedUnarchiver unarchiveObjectWithData:foundValue];
+		NSLog(@"%@",savedCreds);
+		NSArray *credsForApp = (NSArray *)savedCreds[@"kDBDropboxUserCredentials"];
+		for( NSDictionary *credsForUser in credsForApp ) {
+			NSString *uid = credsForUser[@"kDBDropboxUserId"];
+			NSString *token = credsForUser[@"kMPOAuthCredentialAccessToken"];
+			NSString *secret = credsForUser[@"kMPOAuthCredentialAccessTokenSecret"];
+			[self migrateOAuth1Token:token andSecret:secret completion:^(NSString *newToken) {
+				if( newToken == nil ) return;
+				[self addAccessToken:[[JDBAccessToken alloc] initWithAccessToken:newToken uid:uid]];
+			}];
+		}
+	}
+}
+
+- (void)migrateOAuth1Token:(NSString *)token andSecret:(NSString *)secret completion:(void(^)(NSString *token))completion {
+	NSString *nonce = nil;
+	CFUUIDRef uuid = CFUUIDCreate(kCFAllocatorDefault);
+	nonce = (__bridge NSString *)CFUUIDCreateString(kCFAllocatorDefault, uuid);
+	CFRelease(uuid);
+
+	NSURLComponents *components = [NSURLComponents componentsWithString:@"https://api.dropboxapi.com/1/oauth2/token_from_oauth1"];
+
+	// Prepare our parameters as query items…
+	NSMutableArray *queryItems = [NSMutableArray array];
+	[queryItems addObject:[NSURLQueryItem queryItemWithName:@"oauth_consumer_key" value:self.appKey]];
+	[queryItems addObject:[NSURLQueryItem queryItemWithName:@"oauth_nonce" value:nonce]];
+	[queryItems addObject:[NSURLQueryItem queryItemWithName:@"oauth_signature_method" value:@"HMAC-SHA1"]];
+	[queryItems addObject:[NSURLQueryItem queryItemWithName:@"oauth_timestamp" value:[NSString stringWithFormat:@"%d",(int)NSDate.date.timeIntervalSince1970]]];
+	[queryItems addObject:[NSURLQueryItem queryItemWithName:@"oauth_token" value:token]];
+	[queryItems addObject:[NSURLQueryItem queryItemWithName:@"oauth_version" value:@"1.0"]];
+
+	// …sign the query…
+	components.queryItems = queryItems;
+	NSString *unsignedQuery = components.percentEncodedQuery;
+	components.query = nil;
+
+	NSMutableCharacterSet *unreservedCharacters = NSMutableCharacterSet.alphanumericCharacterSet;
+	[unreservedCharacters addCharactersInString:@"-._~"];
+
+	NSString *encodedURL = [components.string stringByAddingPercentEncodingWithAllowedCharacters:unreservedCharacters];
+	NSString *encodedQuery = [unsignedQuery stringByAddingPercentEncodingWithAllowedCharacters:unreservedCharacters];
+	NSData *baseData = [[NSString stringWithFormat:@"POST&%@&%@",encodedURL,encodedQuery] dataUsingEncoding:NSUTF8StringEncoding];
+
+	NSString *encodedAppSecret = [self.appSecret stringByAddingPercentEncodingWithAllowedCharacters:unreservedCharacters];
+	NSString *encodedSecret = [secret stringByAddingPercentEncodingWithAllowedCharacters:unreservedCharacters];
+	NSData *secretData = [[NSString stringWithFormat:@"%@&%@", encodedAppSecret, encodedSecret] dataUsingEncoding:NSUTF8StringEncoding];
+
+	NSMutableData *expectedData = [NSMutableData dataWithLength:CC_SHA1_DIGEST_LENGTH];
+	CCHmacContext hmac;
+	CCHmacInit(&hmac, kCCHmacAlgSHA1, secretData.bytes, secretData.length);
+	CCHmacUpdate(&hmac, baseData.bytes, baseData.length);
+	CCHmacFinal(&hmac, expectedData.bytes);
+
+	NSString *signature = [expectedData base64EncodedStringWithOptions:0];
+	[queryItems addObject:[NSURLQueryItem queryItemWithName:@"oauth_signature" value:signature]];
+
+	// …then encode and remove them (for the POST body)
+	components.queryItems = queryItems;
+	NSString *signedQuery = components.percentEncodedQuery;
+	components.query = nil;
+
+	NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:components.URL];
+	request.allHTTPHeaderFields = @{ @"Content-Type": @"application/x-www-form-urlencoded", @"cache-control": @"no-cache" };
+	request.HTTPMethod = @"POST";
+	request.HTTPBody = [signedQuery dataUsingEncoding:NSUTF8StringEncoding];
+
+	NSURLSessionDataTask *task = [NSURLSession.sharedSession dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+		NSString *token = nil;
+
+		id object = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+		if( [object isKindOfClass:[NSDictionary class]] ) {
+			NSDictionary *json = (NSDictionary *)object;
+			if( [json[@"access_token"] isKindOfClass:[NSString class]] ) {
+				token = (NSString *)json[@"access_token"];
+			}
+		}
+
+		completion( token );
+	}];
+
+	[task resume];
 }
 
 @end

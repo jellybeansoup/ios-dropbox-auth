@@ -76,8 +76,6 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 		_redirectURL = [NSURL URLWithString:[NSString stringWithFormat:@"db-%@://2/token",appKey]];
 		_dauthRedirectURL = [NSURL URLWithString:[NSString stringWithFormat:@"db-%@://1/connect",appKey]];
 
-		[self removeAllAccessTokens];
-
 		[self _migrateFromSync];
 		[self _migrateFromSDKv1];
 	}
@@ -393,6 +391,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 	if (status == noErr && foundValue) {
 		NSDictionary *savedCreds = [NSKeyedUnarchiver unarchiveObjectWithData:foundValue];
 		NSArray *credsForApp = (NSArray *)savedCreds[@"accounts"][self.appKey];
+
 		for( NSDictionary *credsForUser in credsForApp ) {
 			NSString *uid = credsForUser[@"userId"];
 			NSString *token = credsForUser[@"token"];
@@ -402,6 +401,9 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 				[self addAccessToken:[[JDBAccessToken alloc] initWithAccessToken:newToken uid:uid]];
 			}];
 		}
+
+		SecItemDelete((__bridge CFDictionaryRef)@{(__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
+												  (__bridge id)kSecAttrService: keychainId});
 	}
 }
 
@@ -422,8 +424,8 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 	if (status == noErr && foundValue) {
 		NSDictionary *savedCreds = [NSKeyedUnarchiver unarchiveObjectWithData:foundValue];
-		NSLog(@"%@",savedCreds);
 		NSArray *credsForApp = (NSArray *)savedCreds[@"kDBDropboxUserCredentials"];
+
 		for( NSDictionary *credsForUser in credsForApp ) {
 			NSString *uid = credsForUser[@"kDBDropboxUserId"];
 			NSString *token = credsForUser[@"kMPOAuthCredentialAccessToken"];
@@ -433,6 +435,9 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 				[self addAccessToken:[[JDBAccessToken alloc] initWithAccessToken:newToken uid:uid]];
 			}];
 		}
+
+		SecItemDelete((__bridge CFDictionaryRef)@{(__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
+												  (__bridge id)kSecAttrService: keychainId});
 	}
 }
 

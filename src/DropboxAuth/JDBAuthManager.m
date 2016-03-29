@@ -76,8 +76,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 		_redirectURL = [NSURL URLWithString:[NSString stringWithFormat:@"db-%@://2/token",appKey]];
 		_dauthRedirectURL = [NSURL URLWithString:[NSString stringWithFormat:@"db-%@://1/connect",appKey]];
 
-		[self _migrateFromSync];
-		[self _migrateFromSDKv1];
+		[self _performMigration];
 	}
 	return self;
 }
@@ -372,76 +371,83 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 #pragma mark - Migration
 
-- (void)_migrateFromSync {
-	// https://blogs.dropbox.com/developers/2015/05/migrating-sync-sdk-access-tokens-to-core-sdk/
-	NSString *keychainPrefix = NSBundle.mainBundle.bundleIdentifier;
-	NSString *keychainId = [NSString stringWithFormat:@"%@.dropbox-sync.auth", keychainPrefix];
-	NSDictionary *keychainDict = @{(__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
-								   (__bridge id)kSecAttrService: keychainId,
-								   (__bridge id)kSecMatchLimit: (__bridge id)kSecMatchLimitOne,
-								   (__bridge id)kSecReturnAttributes: (__bridge id)kCFBooleanTrue,
-								   (__bridge id)kSecReturnData: (__bridge id)kCFBooleanTrue};
+//! Migrate access tokens used by older SDKs to DropboxAuth's keychain.
+- (void)_performMigration {
+	if( self.appKey != nil && self.appSecret != nil ) return;
+
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		dispatch_async(dispatch_queue_create("com.jellystyle.DropboxAuth.migration", DISPATCH_QUEUE_SERIAL),^{
+
+			NSMutableDictionary *credentials = [NSMutableDictionary dictionary];
+
+			NSString *sdkID = [NSString stringWithFormat:@"%@.dropbox.auth", NSBundle.mainBundle.bundleIdentifier];
+			NSDictionary *sdkCredentials = [self _credentialsForKeychainID:sdkID];
+			if( sdkCredentials != nil && sdkCredentials[@"kDBDropboxUserCredentials"] != nil ) {
+				for( NSDictionary *user in (NSArray *)sdkCredentials[@"kDBDropboxUserCredentials"] ) {
+					[credentials setObject:@{ @"uid": user[@"kDBDropboxUserId"], @"token": user[@"kMPOAuthCredentialAccessToken"], @"secret": user[@"kMPOAuthCredentialAccessTokenSecret"] } forKey:user[@"kDBDropboxUserId"]];
+				}
+			}
+
+			NSString *syncID = [NSString stringWithFormat:@"%@.dropbox-sync.auth", NSBundle.mainBundle.bundleIdentifier];
+			NSDictionary *syncCredentials = [self _credentialsForKeychainID:syncID];
+			if( syncCredentials != nil && syncCredentials[@"accounts"] != nil && syncCredentials[@"accounts"][self.appKey] != nil ) {
+				for( NSDictionary *user in (NSArray *)syncCredentials[@"accounts"][self.appKey] ) {
+					[credentials setObject:@{ @"uid": user[@"userId"], @"token": user[@"token"], @"secret": user[@"secret"] } forKey:user[@"userId"]];
+				}
+			}
+
+			NSUInteger foundCredentials = credentials.count;
+
+			for( NSDictionary *user in credentials.allValues ) {
+				JDBAccessToken *token = [self _tokenForUser:user[@"uid"] withOAuth1Token:user[@"token"] andSecret:user[@"secret"]];
+
+				if( token != nil ) return;
+
+				[self addAccessToken:token];
+				[credentials removeObjectForKey:user[@"uid"]];
+			}
+
+			if( foundCredentials > 0 && self.delegate && [self.delegate respondsToSelector:@selector(authManager:didMigrateAccessTokens:)] ) {
+				JDBMigrationSuccess success = JDBMigrationFailed;
+				if( credentials.count == 0 ) {
+					success = JDBMigrationSuccessful;
+				}
+				else if( credentials.count < foundCredentials ) {
+					success = JDBMigrationPartial;
+				}
+				dispatch_async(dispatch_get_main_queue(),^{
+					[self.delegate authManager:self didMigrateAccessTokens:success];
+				});
+			}
+
+		});
+	});
+}
+
+//! Fetch stored credentials used by older Dropbox SDKs, using the given `keychainID`.
+- (NSDictionary *)_credentialsForKeychainID:(NSString *)keychainID {
+	NSDictionary *query = @{(__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
+							(__bridge id)kSecAttrService: keychainID,
+							(__bridge id)kSecMatchLimit: (__bridge id)kSecMatchLimitOne,
+							(__bridge id)kSecReturnAttributes: (__bridge id)kCFBooleanTrue,
+							(__bridge id)kSecReturnData: (__bridge id)kCFBooleanTrue};
 
 	CFDictionaryRef result = NULL;
-	OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)keychainDict,
-										  (CFTypeRef *)&result);
+	OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, (CFTypeRef *)&result);
 	NSDictionary *attrDict = (__bridge_transfer NSDictionary *)result;
 	NSData *foundValue = [attrDict objectForKey:(__bridge id)kSecValueData];
 
-	if (status == noErr && foundValue) {
-		NSDictionary *savedCreds = [NSKeyedUnarchiver unarchiveObjectWithData:foundValue];
-		NSArray *credsForApp = (NSArray *)savedCreds[@"accounts"][self.appKey];
+	if( status != noErr || foundValue == nil ) return nil;
 
-		for( NSDictionary *credsForUser in credsForApp ) {
-			NSString *uid = credsForUser[@"userId"];
-			NSString *token = credsForUser[@"token"];
-			NSString *secret = credsForUser[@"secret"];
-			[self migrateOAuth1Token:token andSecret:secret completion:^(NSString *newToken) {
-				if( newToken == nil ) return;
-				[self addAccessToken:[[JDBAccessToken alloc] initWithAccessToken:newToken uid:uid]];
-			}];
-		}
+	SecItemDelete((__bridge CFDictionaryRef)@{(__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
+											  (__bridge id)kSecAttrService: keychainID});
 
-		SecItemDelete((__bridge CFDictionaryRef)@{(__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
-												  (__bridge id)kSecAttrService: keychainId});
-	}
+	return [NSKeyedUnarchiver unarchiveObjectWithData:foundValue];
 }
 
-- (void)_migrateFromSDKv1 {
-	NSString *keychainPrefix = NSBundle.mainBundle.bundleIdentifier;
-	NSString *keychainId = [NSString stringWithFormat:@"%@.dropbox.auth", keychainPrefix];
-	NSDictionary *keychainDict = @{(__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
-								   (__bridge id)kSecAttrService: keychainId,
-								   (__bridge id)kSecMatchLimit: (__bridge id)kSecMatchLimitOne,
-								   (__bridge id)kSecReturnAttributes: (__bridge id)kCFBooleanTrue,
-								   (__bridge id)kSecReturnData: (__bridge id)kCFBooleanTrue};
-
-	CFDictionaryRef result = NULL;
-	OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)keychainDict,
-										  (CFTypeRef *)&result);
-	NSDictionary *attrDict = (__bridge_transfer NSDictionary *)result;
-	NSData *foundValue = [attrDict objectForKey:(__bridge id)kSecValueData];
-
-	if (status == noErr && foundValue) {
-		NSDictionary *savedCreds = [NSKeyedUnarchiver unarchiveObjectWithData:foundValue];
-		NSArray *credsForApp = (NSArray *)savedCreds[@"kDBDropboxUserCredentials"];
-
-		for( NSDictionary *credsForUser in credsForApp ) {
-			NSString *uid = credsForUser[@"kDBDropboxUserId"];
-			NSString *token = credsForUser[@"kMPOAuthCredentialAccessToken"];
-			NSString *secret = credsForUser[@"kMPOAuthCredentialAccessTokenSecret"];
-			[self migrateOAuth1Token:token andSecret:secret completion:^(NSString *newToken) {
-				if( newToken == nil ) return;
-				[self addAccessToken:[[JDBAccessToken alloc] initWithAccessToken:newToken uid:uid]];
-			}];
-		}
-
-		SecItemDelete((__bridge CFDictionaryRef)@{(__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
-												  (__bridge id)kSecAttrService: keychainId});
-	}
-}
-
-- (void)migrateOAuth1Token:(NSString *)token andSecret:(NSString *)secret completion:(void(^)(NSString *token))completion {
+//! Get an OAuth2 token from Dropbox using a given OAuth1 token and token secret.
+- (JDBAccessToken *)_tokenForUser:(NSString *)uid withOAuth1Token:(NSString *)token andSecret:(NSString *)secret {
 	NSString *nonce = nil;
 	CFUUIDRef uuid = CFUUIDCreate(kCFAllocatorDefault);
 	nonce = (__bridge NSString *)CFUUIDCreateString(kCFAllocatorDefault, uuid);
@@ -493,21 +499,28 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 	request.HTTPMethod = @"POST";
 	request.HTTPBody = [signedQuery dataUsingEncoding:NSUTF8StringEncoding];
 
+	__block NSString *newToken = nil;
+	dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+
 	NSURLSessionDataTask *task = [NSURLSession.sharedSession dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-		NSString *token = nil;
-
 		id object = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-		if( [object isKindOfClass:[NSDictionary class]] ) {
-			NSDictionary *json = (NSDictionary *)object;
-			if( [json[@"access_token"] isKindOfClass:[NSString class]] ) {
-				token = (NSString *)json[@"access_token"];
-			}
-		}
 
-		completion( token );
+		if( ! [object isKindOfClass:[NSDictionary class]] ) return;
+
+		NSDictionary *json = (NSDictionary *)object;
+
+		if( [json[@"access_token"] isKindOfClass:[NSString class]] ) return;
+
+		newToken = (NSString *)json[@"access_token"];
+
+		dispatch_semaphore_signal(semaphore);
 	}];
 
 	[task resume];
+
+	dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+
+	return [[JDBAccessToken alloc] initWithAccessToken:newToken uid:uid];
 }
 
 @end

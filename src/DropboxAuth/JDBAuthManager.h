@@ -43,6 +43,15 @@ typedef NS_ENUM(NSInteger, JSMOAuth2Error) {
 	JSMOAuth2ErrorTemporarilyUnavailable,
 };
 
+typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
+	//! Tokens could not be migrated
+	JDBMigrationFailed,
+	//! Some tokens could not be migrated
+	JDBMigrationPartial,
+	//! All tokens migrated successfully
+	JDBMigrationSuccessful,
+};
+
 @class JDBAuthManager;
 
 @protocol JDBAuthManagerDelegate <NSObject>
@@ -53,6 +62,8 @@ typedef NS_ENUM(NSInteger, JSMOAuth2Error) {
 
 /// Called when the auth manager removes an access token.
 - (void)authManager:(JDBAuthManager *)authManager didRemoveAccessToken:(JDBAccessToken *)accessToken;
+
+- (void)authManager:(JDBAuthManager *)authManager didMigrateAccessTokens:(JDBMigrationSuccess)success;
 
 @end
 

@@ -363,7 +363,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 //! Migrate access tokens used by older SDKs to DropboxAuth's keychain.
 - (void)_performMigration {
-	if( self.appKey != nil && self.appSecret != nil ) return;
+	if( self.appKey == nil || self.appSecret == nil ) return;
 
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
@@ -392,10 +392,10 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 			for( NSDictionary *user in credentials.allValues ) {
 				JDBAccessToken *token = [self _tokenForUser:user[@"uid"] withOAuth1Token:user[@"token"] andSecret:user[@"secret"]];
 
-				if( token != nil ) return;
+				if( token == nil ) continue;
 
 				[self addAccessToken:token];
-				[credentials removeObjectForKey:user[@"uid"]];
+				[credentials removeObjectForKey:token.uid];
 			}
 
 			if( foundCredentials > 0 && self.delegate && [self.delegate respondsToSelector:@selector(authManager:didMigrateAccessTokens:)] ) {
@@ -499,7 +499,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 		NSDictionary *json = (NSDictionary *)object;
 
-		if( [json[@"access_token"] isKindOfClass:[NSString class]] ) return;
+		if( ! [json[@"access_token"] isKindOfClass:[NSString class]] ) return;
 
 		newToken = (NSString *)json[@"access_token"];
 
@@ -510,7 +510,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 	dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 
-	return [[JDBAccessToken alloc] initWithAccessToken:newToken uid:uid];
+	return newToken ? [[JDBAccessToken alloc] initWithAccessToken:newToken uid:uid] : nil;
 }
 
 @end

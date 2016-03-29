@@ -259,24 +259,24 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 		return nil;
 	}
 
-	JDBAccessToken *result;
+	JDBAccessToken *token;
 	if( [url.host isEqualToString:@"1"] ) {
-		result = [self extractfromDAuthURL:url error:error];
+		token = [self extractfromDAuthURL:url error:error];
 	} else {
-		result = [self extractFromRedirectURL:url error:error];
+		token = [self extractFromRedirectURL:url error:error];
 	}
 
-	if( result != nil && ! [JDBKeychainManager setValue:result.accessToken forKey:result.uid] ) {
+	if( token != nil && ! [self addAccessToken:token] ) {
 		NSDictionary *userInfo = @{ NSLocalizedDescriptionKey: NSLocalizedString(@"Writing the access token to Keychain failed.",@"DROPBOXAUTH_WRITE_FAILURE") };
 		if( error != NULL ) *error = [NSError errorWithDomain:@"JSMKeychainManagerError" code:0 userInfo:userInfo];
-		result = nil;
+		token = nil;
 	}
 
 	if( self.safariViewController != nil && self.safariViewController.presentingViewController != nil ) {
 		[self safariViewControllerDidFinish:self.safariViewController];
 	}
 
-	return result;
+	return token;
 }
 
 #pragma mark - Handling access tokens

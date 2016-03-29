@@ -68,11 +68,10 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 #pragma mark - Instance
 
-- (instancetype)initWithAppKey:(NSString *)appKey andSecret:(NSString *)appSecret host:(NSString *)host {
+- (instancetype)initWithAppKey:(NSString *)appKey andSecret:(NSString *)appSecret {
 	if( ( self = [super init] ) ) {
 		_appKey = appKey;
 		_appSecret = appSecret;
-		_host = host;
 		_redirectURL = [NSURL URLWithString:[NSString stringWithFormat:@"db-%@://2/token",appKey]];
 		_dauthRedirectURL = [NSURL URLWithString:[NSString stringWithFormat:@"db-%@://1/connect",appKey]];
 
@@ -81,16 +80,8 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 	return self;
 }
 
-- (instancetype)initWithAppKey:(NSString *)appKey andSecret:(NSString *)appSecret {
-	return [self initWithAppKey:appKey andSecret:appSecret host:@"www.dropbox.com"];
-}
-
-- (instancetype)initWithAppKey:(NSString *)appKey host:(NSString *)host {
-	return [self initWithAppKey:appKey andSecret:nil host:@"www.dropbox.com"];
-}
-
 - (instancetype)initWithAppKey:(NSString *)appKey {
-	return [self initWithAppKey:appKey andSecret:nil host:@"www.dropbox.com"];
+	return [self initWithAppKey:appKey andSecret:nil];
 }
 
 #pragma mark - Handling authorisation
@@ -133,7 +124,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 - (NSURL *)authURL {
     NSURLComponents *components = [NSURLComponents new];
     components.scheme = @"https";
-    components.host = self.host;
+    components.host = @"www.dropbox.com";
     components.path = @"/1/oauth2/authorize";
 
     components.queryItems = @[
@@ -276,7 +267,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 	}
 
 	if( result != nil && ! [JDBKeychainManager setValue:result.accessToken forKey:result.uid] ) {
-		NSDictionary *userInfo = @{ NSLocalizedDescriptionKey: @"Writing the access token to Keychain failed." };
+		NSDictionary *userInfo = @{ NSLocalizedDescriptionKey: NSLocalizedString(@"Writing the access token to Keychain failed.",@"DROPBOXAUTH_WRITE_FAILURE") };
 		if( error != NULL ) *error = [NSError errorWithDomain:@"JSMKeychainManagerError" code:0 userInfo:userInfo];
 		result = nil;
 	}
@@ -290,16 +281,15 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 #pragma mark - Handling access tokens
 
-- (NSDictionary<NSString *,JDBAccessToken *> *)accessTokens {
+- (NSArray<JDBAccessToken *> *)accessTokens {
 	NSArray *users = [JDBKeychainManager getAll];
-	NSMutableDictionary *ret = [NSMutableDictionary dictionary];
+	NSMutableArray *tokens = [NSMutableArray array];
 	for( NSString *user in users ) {
 		NSString *accessToken = [JDBKeychainManager valueForKey:user];
-		if( accessToken != nil ) {
-			ret[user] = [[JDBAccessToken alloc] initWithAccessToken:accessToken uid:user];
-		}
+		if( accessToken == nil ) continue;
+		[tokens addObject:[[JDBAccessToken alloc] initWithAccessToken:accessToken uid:user]];
 	}
-	return [ret copy];
+	return [tokens copy];
 }
 
 - (JDBAccessToken *)firstAccessToken {
@@ -343,12 +333,12 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 }
 
 - (BOOL)removeAllAccessTokens {
-	NSArray *accessTokens = self.accessTokens.allValues;
+	NSArray *accessTokens = self.accessTokens;
 
 	BOOL success = [JDBKeychainManager clearAll];
 
 	for( JDBAccessToken *token in accessTokens ) {
-		if( [self.accessTokens.allValues containsObject:token] ) continue;
+		if( [self accessTokenForUserID:token.uid] ) continue;
 		if( self.delegate && [self.delegate respondsToSelector:@selector(authManager:didRemoveAccessToken:)] ) {
 			[self.delegate authManager:self didRemoveAccessToken:token];
 		}

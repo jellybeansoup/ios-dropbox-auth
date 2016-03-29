@@ -26,23 +26,25 @@
 @import UIKit;
 #import <DropboxAuth/JDBAccessToken.h>
 
+/// Flag for indicating the reason authorisation failed.
 typedef NS_ENUM(NSInteger, JSMOAuth2Error) {
-	/// Some other error (outside of the OAuth2 specification)
+	//! Some other error (outside of the OAuth2 specification)
 	JSMOAuth2ErrorUnknown,
-	/// The client is not authorized to request an access token using this method.
+	//! The client is not authorized to request an access token using this method.
 	JSMOAuth2ErrorUnauthorizedClient,
-	/// The resource owner or authorization server denied the request.
+	//! The resource owner or authorization server denied the request.
 	JSMOAuth2ErrorAccessDenied,
-	/// The authorization server does not support obtaining an access token using this method.
+	//! The authorization server does not support obtaining an access token using this method.
 	JSMOAuth2ErrorUnsupportedResponseType,
-	/// The requested scope is invalid, unknown, or malformed.
+	//! The requested scope is invalid, unknown, or malformed.
 	JSMOAuth2ErrorInvalidScope,
-	/// The authorization server encountered an unexpected condition that prevented it from fulfilling the request.
+	//! The authorization server encountered an unexpected condition that prevented it from fulfilling the request.
 	JSMOAuth2ErrorServerError,
-	/// The authorization server is currently unable to handle the request due to a temporary overloading or maintenance of the server.
+	//! The authorization server is currently unable to handle the request due to a temporary overloading or maintenance of the server.
 	JSMOAuth2ErrorTemporarilyUnavailable,
 };
 
+/// Flag for indicating the level of success in migrating access tokens.
 typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 	//! Tokens could not be migrated
 	JDBMigrationFailed,
@@ -58,46 +60,45 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 @optional
 
 /// Called when the auth manager adds a new access token.
+/// @param authManager The auth manager.
+/// @param accessToken The access token that was added.
 - (void)authManager:(JDBAuthManager *)authManager didAddAccessToken:(JDBAccessToken *)accessToken;
 
 /// Called when the auth manager removes an access token.
+/// @param authManager The auth manager.
+/// @param accessToken The access token that was removed.
 - (void)authManager:(JDBAuthManager *)authManager didRemoveAccessToken:(JDBAccessToken *)accessToken;
 
+/// Called when the auth manager completes migration of access tokens.
+/// @param authManager The auth manager.
+/// @param success Flag to indicate if access tokens were migrated successfully.
 - (void)authManager:(JDBAuthManager *)authManager didMigrateAccessTokens:(JDBMigrationSuccess)success;
 
 @end
 
 @interface JDBAuthManager : NSObject
 
+/// Delegate which gets notified when changes occur.
 @property (nonatomic, strong) id<JDBAuthManagerDelegate> delegate;
 
+/// The application's consumer key.
+/// Found in the Dropbox developer console: <https://www.dropbox.com/developers/apps>
 @property (nonatomic, strong, readonly) NSString *appKey;
 
+/// The application's consumer secret.
+/// This is only used for migration of OAuth 1.0 access tokens, and can be `nil` (which will prevent migration).
 @property (nonatomic, strong, readonly) NSString *appSecret;
-
-@property (nonatomic, strong, readonly) NSString *host;
 
 // @name Instance
 
-/// Create an auth manager with the given app key and host name.
-/// @param appKey The app key to use for authorisation.
-/// @param host The host name to use when accessing Dropbox.
-- (instancetype)initWithAppKey:(NSString *)appKey host:(NSString *)host;
+/// Create an auth manager with the given app key.
+/// @param appKey The app key to use for authorisation (optional).
+/// @param appSecret The app secret to use for migrating OAuth 1.0 access tokens.
+- (instancetype)initWithAppKey:(NSString *)appKey andSecret:(NSString *)appSecret;
 
 /// Create an auth manager with the given app key.
 /// @param appKey The app key to use for authorisation.
 - (instancetype)initWithAppKey:(NSString *)appKey;
-
-/// Create an auth manager with the given app key and host name.
-/// @param appKey The app key to use for authorisation.
-/// @param appSecret The app secret to use for authorisation (optional).
-/// @param host The host name to use when accessing Dropbox.
-- (instancetype)initWithAppKey:(NSString *)appKey andSecret:(NSString *)appSecret host:(NSString *)host;
-
-/// Create an auth manager with the given app key.
-/// @param appKey The app key to use for authorisation (optional).
-/// @param appSecret The app secret to use for authorisation.
-- (instancetype)initWithAppKey:(NSString *)appKey andSecret:(NSString *)appSecret;
 
 // @name Handling authorisation
 
@@ -125,8 +126,8 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 @property (nonatomic, readonly) BOOL hasAccessTokens;
 
 /// Retrieve all stored access tokens
-/// @return A dictionary mapping users to their access tokens
-@property (nonatomic, strong, readonly) NSDictionary<NSString *,JDBAccessToken *> *accessTokens;
+/// @return An array of all stored access tokens
+@property (nonatomic, strong, readonly) NSArray<JDBAccessToken *> *accessTokens;
 
 /// Utility function to return an arbitrary access token
 /// @return the "first" access token found, if any (otherwise `nil`)
@@ -136,11 +137,6 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 /// @param uid The user whose token to retrieve
 /// @return An access token if present, otherwise `nil`.
 - (JDBAccessToken *)accessTokenForUserID:(NSString *)uid;
-
-/// Save an access token
-/// @param token The access token to save
-/// @return whether the operation succeeded
-- (BOOL)addAccessToken:(JDBAccessToken *)token;
 
 /// Delete a specific access token
 /// @param token The access token to delete

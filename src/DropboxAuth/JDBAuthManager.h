@@ -69,6 +69,10 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 /// @param accessToken The access token that was removed.
 - (void)authManager:(JDBAuthManager *)authManager didRemoveAccessToken:(JDBAccessToken *)accessToken;
 
+/// Called when the auth manager detects access tokens to be migrated.
+/// @param authManager The auth manager.
+- (void)authManagerWillMigrateAccessTokens:(JDBAuthManager *)authManager;
+
 /// Called when the auth manager completes migration of access tokens.
 /// @param authManager The auth manager.
 /// @param success Flag to indicate if access tokens were migrated successfully.

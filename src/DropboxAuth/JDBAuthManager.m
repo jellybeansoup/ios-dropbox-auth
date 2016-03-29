@@ -389,6 +389,12 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 			NSUInteger foundCredentials = credentials.count;
 
+			if( foundCredentials > 0 && self.delegate && [self.delegate respondsToSelector:@selector(authManagerWillMigrateAccessTokens:)] ) {
+				dispatch_async(dispatch_get_main_queue(),^{
+					[self.delegate authManagerWillMigrateAccessTokens:self];
+				});
+			}
+
 			for( NSDictionary *user in credentials.allValues ) {
 				JDBAccessToken *token = [self _tokenForUser:user[@"uid"] withOAuth1Token:user[@"token"] andSecret:user[@"secret"]];
 

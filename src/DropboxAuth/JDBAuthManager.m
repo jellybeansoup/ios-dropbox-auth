@@ -503,13 +503,15 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 	dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
 	NSURLSessionDataTask *task = [NSURLSession.sharedSession dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+		if( data == nil ) return;
+
 		id object = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
 
-		if( ! [object isKindOfClass:[NSDictionary class]] ) return;
+		if( object != nil && ! [object isKindOfClass:[NSDictionary class]] ) return;
 
 		NSDictionary *json = (NSDictionary *)object;
 
-		if( ! [json[@"access_token"] isKindOfClass:[NSString class]] ) return;
+		if( json[@"access_token"] != nil && ! [json[@"access_token"] isKindOfClass:[NSString class]] ) return;
 
 		newToken = (NSString *)json[@"access_token"];
 

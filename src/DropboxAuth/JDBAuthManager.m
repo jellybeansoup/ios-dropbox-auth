@@ -375,7 +375,9 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 			NSDictionary *sdkCredentials = [self _credentialsForKeychainID:sdkID];
 			if( sdkCredentials != nil && sdkCredentials[@"kDBDropboxUserCredentials"] != nil ) {
 				for( NSDictionary *user in (NSArray *)sdkCredentials[@"kDBDropboxUserCredentials"] ) {
-					[credentials setObject:@{ @"uid": user[@"kDBDropboxUserId"], @"token": user[@"kMPOAuthCredentialAccessToken"], @"secret": user[@"kMPOAuthCredentialAccessTokenSecret"] } forKey:user[@"kDBDropboxUserId"]];
+					NSString *uid = user[@"kDBDropboxUserId"];
+					if( credentials[uid] != nil ) continue;
+					[credentials setObject:@{ @"uid": uid, @"token": user[@"kMPOAuthCredentialAccessToken"], @"secret": user[@"kMPOAuthCredentialAccessTokenSecret"] } forKey:uid];
 				}
 			}
 
@@ -383,7 +385,9 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 			NSDictionary *syncCredentials = [self _credentialsForKeychainID:syncID];
 			if( syncCredentials != nil && syncCredentials[@"accounts"] != nil && syncCredentials[@"accounts"][self.appKey] != nil ) {
 				for( NSDictionary *user in (NSArray *)syncCredentials[@"accounts"][self.appKey] ) {
-					[credentials setObject:@{ @"uid": user[@"userId"], @"token": user[@"token"], @"secret": user[@"secret"] } forKey:user[@"userId"]];
+					NSString *uid = user[@"userId"];
+					if( credentials[uid] != nil ) continue;
+					[credentials setObject:@{ @"uid": uid, @"token": user[@"token"], @"secret": user[@"tokenSecret"] } forKey:uid];
 				}
 			}
 

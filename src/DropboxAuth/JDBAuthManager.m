@@ -484,7 +484,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 	CCHmacContext hmac;
 	CCHmacInit(&hmac, kCCHmacAlgSHA1, secretData.bytes, secretData.length);
 	CCHmacUpdate(&hmac, baseData.bytes, baseData.length);
-	CCHmacFinal(&hmac, expectedData.bytes);
+	CCHmacFinal(&hmac, expectedData.mutableBytes);
 
 	NSString *signature = [expectedData base64EncodedStringWithOptions:0];
 	[queryItems addObject:[NSURLQueryItem queryItemWithName:@"oauth_signature" value:signature]];

@@ -14,8 +14,8 @@
 		A11C058216FAA51700C44D43 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A11C058116FAA51700C44D43 /* AppDelegate.m */; };
 		A1A0BAEC16FAC6B100093C2F /* MainStoryboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A11C058916FAA51700C44D43 /* MainStoryboard.storyboard */; };
 		A1A787321C7BECF00095A0EF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A1A787301C7BECF00095A0EF /* LaunchScreen.storyboard */; };
-		A1A787401C7BEDC20095A0EF /* libDropboxAuth.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A7872F1C7BEC1E0095A0EF /* libDropboxAuth.a */; };
-		A1A787451C7BEEF60095A0EF /* libDropboxAuth.a in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = A1A7872F1C7BEC1E0095A0EF /* libDropboxAuth.a */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		A1A787401C7BEDC20095A0EF /* DropboxAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1A7872F1C7BEC1E0095A0EF /* DropboxAuth.framework */; };
+		A1A787451C7BEEF60095A0EF /* DropboxAuth.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = A1A7872F1C7BEC1E0095A0EF /* DropboxAuth.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A1FCE6D718503BDD00E9362F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1FCE6D618503BDD00E9362F /* Images.xcassets */; };
 		A1FCE6DB18503C8700E9362F /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A1FCE6DA18503C8700E9362F /* ViewController.m */; };
 /* End PBXBuildFile section */
@@ -44,7 +44,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				A1A787451C7BEEF60095A0EF /* libDropboxAuth.a in Copy Frameworks */,
+				A1A787451C7BEEF60095A0EF /* DropboxAuth.framework in Copy Frameworks */,
 			);
 			name = "Copy Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -75,7 +75,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1A787401C7BEDC20095A0EF /* libDropboxAuth.a in Frameworks */,
+				A1A787401C7BEDC20095A0EF /* DropboxAuth.framework in Frameworks */,
 				A11C057216FAA51700C44D43 /* UIKit.framework in Frameworks */,
 				A11C057416FAA51700C44D43 /* Foundation.framework in Frameworks */,
 				A11C057616FAA51700C44D43 /* CoreGraphics.framework in Frameworks */,
@@ -143,7 +143,7 @@
 		A1A7872A1C7BEC1E0095A0EF /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A1A7872F1C7BEC1E0095A0EF /* libDropboxAuth.a */,
+				A1A7872F1C7BEC1E0095A0EF /* DropboxAuth.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -203,10 +203,10 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		A1A7872F1C7BEC1E0095A0EF /* libDropboxAuth.a */ = {
+		A1A7872F1C7BEC1E0095A0EF /* DropboxAuth.framework */ = {
 			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libDropboxAuth.a;
+			fileType = wrapper.framework;
+			path = DropboxAuth.framework;
 			remoteRef = A1A7872E1C7BEC1E0095A0EF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
@@ -330,7 +330,7 @@
 		A11C05AA16FAA51700C44D43 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = YES;
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CLANG_ENABLE_MODULES = YES;
@@ -348,7 +348,7 @@
 		A11C05AB16FAA51700C44D43 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = YES;
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CLANG_ENABLE_MODULES = YES;

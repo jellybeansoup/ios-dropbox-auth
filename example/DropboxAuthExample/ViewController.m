@@ -42,18 +42,17 @@
 	[super viewWillAppear:animated];
 
 	JDBAuthManager *authManager = [(AppDelegate *)[[UIApplication sharedApplication] delegate] dropboxAuthManager];
-	JDBAccessToken *accessToken = [authManager getFirstAccessToken];
+	JDBAccessToken *accessToken = authManager.firstAccessToken;
 	if( accessToken != nil ) {
 		self.connectButton.hidden = YES;
 		self.accountView.hidden = NO;
 		self.accountLabel.text = @"Loading account details…";
 
 		NSURL *url = [NSURL URLWithString:@"https://api.dropboxapi.com/2/users/get_current_account"];
-		NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+		NSMutableURLRequest *request = [[accessToken signedRequestWithURL:url] mutableCopy];
 		request.HTTPMethod = @"POST";
 
-		NSURLRequest *signedRequest = [accessToken URLRequestBySigningURLRequest:request];
-		NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:signedRequest completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+		NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
 
 			dispatch_async(dispatch_get_main_queue(), ^{
 				NSData *convertedData = [NSData dataWithBytes:data.bytes length:data.length];
@@ -91,9 +90,9 @@
 
 - (IBAction)disconnect:(id)sender {
 	JDBAuthManager *authManager = [(AppDelegate *)[[UIApplication sharedApplication] delegate] dropboxAuthManager];
-	[authManager clearStoredAccessTokens];
+	[authManager removeAllAccessTokens];
 
-	if( [authManager getFirstAccessToken] == nil ) {
+	if( authManager.firstAccessToken == nil ) {
 		self.connectButton.hidden = NO;
 		self.accountView.hidden = YES;
 	}

@@ -448,9 +448,8 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 //! Get an OAuth2 token from Dropbox using a given OAuth1 token and token secret.
 - (JDBAccessToken *)_tokenForUser:(NSString *)uid withOAuth1Token:(NSString *)token andSecret:(NSString *)secret {
-	NSString *nonce = nil;
 	CFUUIDRef uuid = CFUUIDCreate(kCFAllocatorDefault);
-	nonce = (__bridge NSString *)CFUUIDCreateString(kCFAllocatorDefault, uuid);
+	NSString *nonce = CFBridgingRelease(CFUUIDCreateString(kCFAllocatorDefault, uuid));
 	CFRelease(uuid);
 
 	NSURLComponents *components = [NSURLComponents componentsWithString:@"https://api.dropboxapi.com/1/oauth2/token_from_oauth1"];

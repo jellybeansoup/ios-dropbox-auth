@@ -24,6 +24,8 @@
 
 @import Foundation;
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface JDBKeychainManager : NSObject
 
 + (BOOL)setValue:(NSString *)value forKey:(NSString *)key;
@@ -39,3 +41,5 @@
 + (void)jsm_listAllItems;
 
 @end
+
+NS_ASSUME_NONNULL_END

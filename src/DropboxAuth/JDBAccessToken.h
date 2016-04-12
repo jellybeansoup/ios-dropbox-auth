@@ -24,6 +24,8 @@
 
 @import Foundation;
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface JDBAccessToken : NSObject
 
 /// The access token string.
@@ -55,3 +57,5 @@
 - (NSURLRequest *)signedRequestWithURL:(NSURL *)url;
 
 @end
+
+NS_ASSUME_NONNULL_END

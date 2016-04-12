@@ -26,6 +26,8 @@
 @import UIKit;
 #import <DropboxAuth/JDBAccessToken.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /// Flag for indicating the reason authorisation failed.
 typedef NS_ENUM(NSInteger, JSMOAuth2Error) {
 	//! Some other error (outside of the OAuth2 specification)
@@ -83,7 +85,7 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 @interface JDBAuthManager : NSObject
 
 /// Delegate which gets notified when changes occur.
-@property (nonatomic, strong) id<JDBAuthManagerDelegate> delegate;
+@property (nonatomic, strong, nullable) id<JDBAuthManagerDelegate> delegate;
 
 /// The application's consumer key.
 /// Found in the Dropbox developer console: <https://www.dropbox.com/developers/apps>
@@ -91,14 +93,14 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 
 /// The application's consumer secret.
 /// This is only used for migration of OAuth 1.0 access tokens, and can be `nil` (which will prevent migration).
-@property (nonatomic, strong, readonly) NSString *appSecret;
+@property (nonatomic, strong, readonly, nullable) NSString *appSecret;
 
 // @name Instance
 
 /// Create an auth manager with the given app key.
 /// @param appKey The app key to use for authorisation (optional).
 /// @param appSecret The app secret to use for migrating OAuth 1.0 access tokens.
-- (instancetype)initWithAppKey:(NSString *)appKey andSecret:(NSString *)appSecret;
+- (instancetype)initWithAppKey:(NSString *)appKey andSecret:(NSString * _Nullable)appSecret;
 
 /// Create an auth manager with the given app key.
 /// @param appKey The app key to use for authorisation.
@@ -121,7 +123,7 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 /// Try to handle a redirect back into the application
 /// @param url The URL to attempt to handle.
 /// @return `nil` if SwiftyDropbox cannot handle the redirect URL, otherwise returns the `DropboxAuthResult`.
-- (JDBAccessToken *)handleRedirectURL:(NSURL *)url error:(NSError **)error;
+- (JDBAccessToken * _Nullable)handleRedirectURL:(NSURL *)url error:(NSError **)error;
 
 // @name Handling access tokens
 
@@ -135,12 +137,12 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 
 /// Utility function to return an arbitrary access token
 /// @return the "first" access token found, if any (otherwise `nil`)
-@property (nonatomic, strong, readonly) JDBAccessToken *firstAccessToken;
+@property (nonatomic, strong, readonly, nullable) JDBAccessToken *firstAccessToken;
 
 /// Retrieve the access token for a particular user identifier
 /// @param uid The user whose token to retrieve
 /// @return An access token if present, otherwise `nil`.
-- (JDBAccessToken *)accessTokenForUserID:(NSString *)uid;
+- (JDBAccessToken * _Nullable)accessTokenForUserID:(NSString *)uid;
 
 /// Delete a specific access token
 /// @param token The access token to delete
@@ -152,3 +154,5 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 - (BOOL)removeAllAccessTokens;
 
 @end
+
+NS_ASSUME_NONNULL_END

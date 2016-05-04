@@ -173,16 +173,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 - (BOOL)authorizeWithDropboxApp {
 	if( ! [self conformsToAppScheme] ) {
-		NSLog(@"DropboxSDK: unable to link; app isn't registered for correct URL scheme (db-%@)",self.appKey);
-		return NO;
-	}
-
-	if( ! [self hasApplicationQueriesScheme] ) {
-		NSLog(@"DropboxSDK: unable to link; app isn't registered to query for URL scheme dbapi-2. Add a dbapi-2 entry to LSApplicationQueriesSchemes");
-		return NO;
-	}
-
-	if( [[UIApplication sharedApplication] canOpenURL:[self dAuthURL:nil]]) {
+		NSLog(@"DropboxSDK: unable to link; app isn't registered for correct URL scheme (db-%@).",self.appKey);
 		return NO;
 	}
 

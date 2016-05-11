@@ -165,13 +165,18 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
     return NO;
 }
 
-- (void)authorizeFromController:(UIViewController *)controller {
+- (void)authorizeFromController:(UIViewController *)controller NS_EXTENSION_UNAVAILABLE_IOS("Use the `authViewController` where appropriate instead.") {
 	if( ! [self authorizeWithDropboxApp] ) {
-		[controller presentViewController:self.authViewController animated:YES completion:nil];
+		if( NSClassFromString(@"SFSafariViewController") != nil ) {
+			[controller presentViewController:self.authViewController animated:YES completion:nil];
+		}
+		else {
+			[self authorizeInSafari];
+		}
 	}
 }
 
-- (BOOL)authorizeWithDropboxApp {
+- (BOOL)authorizeWithDropboxApp NS_EXTENSION_UNAVAILABLE_IOS("Use the `authViewController` where appropriate instead.") {
 	if( ! [self conformsToAppScheme] ) {
 		NSLog(@"DropboxSDK: unable to link; app isn't registered for correct URL scheme (db-%@).",self.appKey);
 		return NO;
@@ -183,7 +188,11 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 	return [[UIApplication sharedApplication] openURL:[self dAuthURL:nonce]];
 }
 
-- (UIViewController *)authViewController {
+- (BOOL)authorizeInSafari NS_EXTENSION_UNAVAILABLE_IOS("Use the `authViewController` where appropriate instead.") {
+	return [[UIApplication sharedApplication] openURL:[self authURL]];
+}
+
+- (UIViewController *)authViewController NS_CLASS_AVAILABLE_IOS(9_0) {
 	SFSafariViewController *safariViewController = [[SFSafariViewController alloc] initWithURL:[self authURL]];
 	safariViewController.delegate = self;
 	return (UIViewController *)safariViewController;
@@ -263,7 +272,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 		token = nil;
 	}
 
-	if( self.safariViewController != nil && self.safariViewController.presentingViewController != nil ) {
+	if( NSClassFromString(@"SFSafariViewController") != nil && self.safariViewController != nil && self.safariViewController.presentingViewController != nil ) {
 		[self safariViewControllerDidFinish:self.safariViewController];
 	}
 
@@ -340,11 +349,11 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 #pragma mark - Safari view controller delegate
 
-- (void)safariViewController:(SFSafariViewController *)controller didCompleteInitialLoad:(BOOL)didLoadSuccessfully {
+- (void)safariViewController:(SFSafariViewController *)controller didCompleteInitialLoad:(BOOL)didLoadSuccessfully NS_CLASS_AVAILABLE_IOS(9_0) {
 	_safariViewController = controller;
 }
 
-- (void)safariViewControllerDidFinish:(SFSafariViewController *)controller {
+- (void)safariViewControllerDidFinish:(SFSafariViewController *)controller NS_CLASS_AVAILABLE_IOS(9_0) {
 	[self.safariViewController dismissViewControllerAnimated:YES completion:^{
 		_safariViewController = nil;
 	}];

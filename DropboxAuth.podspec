@@ -1,5 +1,5 @@
 Pod::Spec.new do |s|
-  s.name         = "Dropbox Auth"
+  s.name         = "DropboxAuth"
   s.version      = "0.1.0"
   s.summary      = "A simple library for authorising Dropbox API requests on iOS."
   s.homepage     = "https://github.com/jellybeansoup/ios-dropbox-auth"

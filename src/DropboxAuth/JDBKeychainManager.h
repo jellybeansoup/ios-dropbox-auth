@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (BOOL)setValue:(NSString *)value forKey:(NSString *)key;
 
-+ (NSString *)valueForKey:(NSString *)key;
++ (NSString * _Nullable)valueForKey:(NSString *)key;
 
 + (BOOL)removeValueForKey:(NSString *)key;
 

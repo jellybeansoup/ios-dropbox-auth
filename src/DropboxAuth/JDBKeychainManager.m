@@ -36,56 +36,44 @@
 
 	NSDictionary *query = [self jsm_queryWithDict:@{ (__bridge id)kSecAttrAccount: key, (__bridge id)kSecValueData: data }];
 
-	SecItemDelete((__bridge CFDictionaryRef)query);
+	[self jsm_delete:query];
 
-	return SecItemAdd((__bridge CFDictionaryRef)query, nil) == noErr;
-}
-
-+ (NSData *)getAsData:(NSString *)key {
-	if( key == nil ) return nil;
-
-	NSDictionary *query = [self jsm_queryWithDict:@{ (__bridge id)kSecAttrAccount: key,
-												   (__bridge id)kSecReturnData: (__bridge id)kCFBooleanTrue,
-												   (__bridge id)kSecMatchLimit: (__bridge id)kSecMatchLimitOne }];
-
-	CFDataRef dataResult = NULL;
-	OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, (CFTypeRef *)&dataResult);
-
-	if( status != noErr ) { return nil; }
-
-	return (__bridge NSData *)dataResult;
+	return [self jsm_add:query];
 }
 
 + (NSString *)valueForKey:(NSString *)key {
 	if( key == nil ) return nil;
 
-	NSData *data = [self getAsData:key];
+	NSDictionary *query = [self jsm_queryWithDict:@{ (__bridge id)kSecAttrAccount: key,
+													 (__bridge id)kSecReturnData: (__bridge id)kCFBooleanTrue,
+													 (__bridge id)kSecMatchLimit: (__bridge id)kSecMatchLimitOne }];
 
-	if( data == nil ) { return nil; }
+	CFDataRef dataResult = [self jsm_query:query];
 
-	return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+	if( dataResult == nil ) { return nil; }
+
+	return [[NSString alloc] initWithData:(__bridge NSData *)dataResult encoding:NSUTF8StringEncoding];
 }
 
 + (BOOL)removeValueForKey:(NSString *)key {
 	if( key == nil ) return NO;
 
 	NSDictionary *query = [self jsm_queryWithDict:@{ (__bridge id)kSecAttrAccount: key }];
-	return SecItemDelete((__bridge CFDictionaryRef)query) == noErr;
+
+	return [self jsm_delete:query];
 }
 
 + (NSArray<NSString *> *)getAll {
 	NSDictionary *query = [self jsm_queryWithDict:@{ (__bridge id)kSecReturnAttributes: (__bridge id)kCFBooleanTrue,
 												 (__bridge id)kSecMatchLimit: (__bridge id)kSecMatchLimitAll }];
 
-	CFArrayRef dataResult = NULL;
-	OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, (CFTypeRef *)&dataResult);
+	CFArrayRef dataResult = [self jsm_query:query];
 
-	if( status != noErr ) { return @[]; }
+	if( dataResult == nil ) { return @[]; }
 
 	NSArray *results = (__bridge NSArray *)dataResult;
-	if( ! [results isKindOfClass:[NSArray class]] ) {
-		results = @[];
-	}
+
+	if( ! [results isKindOfClass:[NSArray class]] ) { return @[]; }
 
 	NSMutableArray *mappedResults = [NSMutableArray array];
 	[results enumerateObjectsUsingBlock:^(NSDictionary * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
@@ -96,7 +84,55 @@
 
 + (BOOL)clearAll {
 	NSDictionary *query = [self jsm_queryWithDict:@{}];
-	return SecItemDelete((__bridge CFDictionaryRef)query) == noErr;
+
+	return [self jsm_delete:query];
+}
+
+#pragma mark - Keychain wrappers
+
+// These wrappers hit the keychain twice to avoid inaccurate errors.
+// https://forums.developer.apple.com/thread/4743
+
++ (CFDataRef *)jsm_query:(NSDictionary *)query {
+	CFDictionaryRef queryRef = (__bridge CFDictionaryRef)query;
+
+	CFDataRef dataResult = NULL;
+	OSStatus status = SecItemCopyMatching(queryRef, (CFTypeRef *)&dataResult);
+
+	if( status != noErr ) {
+		status = SecItemCopyMatching(queryRef, (CFTypeRef *)&dataResult);
+	}
+
+	if( status != noErr ) {
+		return nil;
+	}
+
+	return dataResult;
+}
+
++ (BOOL)jsm_delete:(NSDictionary *)query {
+	CFDictionaryRef queryRef = (__bridge CFDictionaryRef)query;
+
+	CFDataRef dataResult = NULL;
+	OSStatus status = SecItemDelete(queryRef);
+
+	if( status != noErr ) {
+		status = SecItemDelete(queryRef);
+	}
+
+	return status == noErr;
+}
+
++ (BOOL)jsm_add:(NSDictionary *)query {
+	CFDictionaryRef queryRef = (__bridge CFDictionaryRef)query;
+
+	OSStatus status = SecItemAdd(queryRef, nil);
+
+	if( status != noErr ) {
+		status = SecItemAdd(queryRef, nil);
+	}
+
+	return status == noErr;
 }
 
 #pragma mark - Utilities

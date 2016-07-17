@@ -35,7 +35,7 @@
 }
 
 - (NSString *)description {
-	return self.accessToken;
+	return [NSString stringWithFormat:@"<%@ uid:%@ accessToken:%@>", NSStringFromClass(self.class), self.uid, self.accessToken];
 }
 
 - (NSURLRequest *)signedRequestFromRequest:(NSURLRequest *)request {

@@ -138,8 +138,15 @@
 #pragma mark - Utilities
 
 + (NSDictionary *)jsm_queryWithDict:(NSDictionary<NSString *, id> *)query {
-	NSString *bundleId = [[NSBundle mainBundle] bundleIdentifier] ?: @"";
-	NSMutableDictionary *queryDict = [query mutableCopy];
+    NSBundle *bundle = [NSBundle mainBundle];
+    if( bundle.bundleURL.pathExtension != nil && [bundle.bundleURL.pathExtension isEqualToString:@"appex"] ) {
+        // Peel off two directory levels - MY_APP.app/PlugIns/MY_APP_EXTENSION.appex
+        // <http://stackoverflow.com/questions/26189060/get-the-main-app-bundle-from-within-extension>
+        bundle = [NSBundle bundleWithURL:[[bundle.bundleURL URLByDeletingLastPathComponent] URLByDeletingLastPathComponent]];
+    }
+    
+    NSString *bundleId = [bundle bundleIdentifier] ?: @"";
+    NSMutableDictionary *queryDict = [query mutableCopy];
 
 	queryDict[(__bridge id)kSecClass] = (__bridge id)kSecClassGenericPassword;
 	queryDict[(__bridge id)kSecAttrService] = [NSString stringWithFormat:@"%@.dropbox.authv2",bundleId];

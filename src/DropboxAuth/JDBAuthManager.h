@@ -49,11 +49,11 @@ typedef NS_ENUM(NSInteger, JSMOAuth2Error) {
 /// Flag for indicating the level of success in migrating access tokens.
 typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 	//! Tokens could not be migrated
-	JDBMigrationFailed,
+	JDBMigrationFailed NS_SWIFT_NAME(failed),
 	//! Some tokens could not be migrated
-	JDBMigrationPartial,
+	JDBMigrationPartial NS_SWIFT_NAME(partial),
 	//! All tokens migrated successfully
-	JDBMigrationSuccessful,
+	JDBMigrationSuccessful NS_SWIFT_NAME(successful),
 };
 
 @class JDBAuthManager;
@@ -64,21 +64,21 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 /// Called when the auth manager adds a new access token.
 /// @param authManager The auth manager.
 /// @param accessToken The access token that was added.
-- (void)authManager:(JDBAuthManager *)authManager didAddAccessToken:(JDBAccessToken *)accessToken;
+- (void)authManager:(JDBAuthManager *)authManager didAddAccessToken:(JDBAccessToken *)accessToken NS_SWIFT_NAME(authManager(_:didAdd:));
 
 /// Called when the auth manager removes an access token.
 /// @param authManager The auth manager.
 /// @param accessToken The access token that was removed.
-- (void)authManager:(JDBAuthManager *)authManager didRemoveAccessToken:(JDBAccessToken *)accessToken;
+- (void)authManager:(JDBAuthManager *)authManager didRemoveAccessToken:(JDBAccessToken *)accessToken NS_SWIFT_NAME(authManager(_:didRemove:));
 
 /// Called when the auth manager detects access tokens to be migrated.
 /// @param authManager The auth manager.
-- (void)authManagerWillMigrateAccessTokens:(JDBAuthManager *)authManager;
+- (void)authManagerWillMigrateAccessTokens:(JDBAuthManager *)authManager NS_SWIFT_NAME(authManagerWillMigrateAccessTokens(_:));
 
 /// Called when the auth manager completes migration of access tokens.
 /// @param authManager The auth manager.
 /// @param success Flag to indicate if access tokens were migrated successfully.
-- (void)authManager:(JDBAuthManager *)authManager didMigrateAccessTokens:(JDBMigrationSuccess)success;
+- (void)authManager:(JDBAuthManager *)authManager didMigrateAccessTokens:(JDBMigrationSuccess)success NS_SWIFT_NAME(authManagerDidRemoveAccessToken(_:success:));
 
 @end
 
@@ -100,11 +100,11 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 /// Create an auth manager with the given app key.
 /// @param appKey The app key to use for authorisation (optional).
 /// @param appSecret The app secret to use for migrating OAuth 1.0 access tokens.
-- (instancetype)initWithAppKey:(NSString *)appKey andSecret:(NSString * _Nullable)appSecret;
+- (instancetype)initWithAppKey:(NSString *)appKey andSecret:(NSString * _Nullable)appSecret NS_SWIFT_NAME(init(key:secret:));
 
 /// Create an auth manager with the given app key.
 /// @param appKey The app key to use for authorisation.
-- (instancetype)initWithAppKey:(NSString *)appKey;
+- (instancetype)initWithAppKey:(NSString *)appKey NS_SWIFT_NAME(init(key:));
 
 // @name Handling authorisation
 
@@ -122,12 +122,12 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 /// Present the OAuth2 authorization request page by presenting a web view controller modally.
 /// This is the equivalent of the Dropbox SDK's method of the same name.
 /// @param controller The controller to present from.
-- (void)authorizeFromController:(UIViewController *)controller NS_EXTENSION_UNAVAILABLE_IOS("Use the `authViewController` where appropriate instead.");
+- (void)authorizeFromController:(UIViewController *)controller NS_SWIFT_NAME(authorize(from:)) NS_EXTENSION_UNAVAILABLE_IOS("Use the `authViewController` where appropriate instead.");
 
 /// Try to handle a redirect back into the application
 /// @param url The URL to attempt to handle.
 /// @return `nil` if SwiftyDropbox cannot handle the redirect URL, otherwise returns the `DropboxAuthResult`.
-- (JDBAccessToken * _Nullable)handleRedirectURL:(NSURL *)url error:(NSError **)error;
+- (JDBAccessToken * _Nullable)handleRedirectURL:(NSURL *)url error:(NSError **)error NS_SWIFT_NAME(handle(_:));
 
 // @name Handling access tokens
 
@@ -146,12 +146,12 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 /// Retrieve the access token for a particular user identifier
 /// @param uid The user whose token to retrieve
 /// @return An access token if present, otherwise `nil`.
-- (JDBAccessToken * _Nullable)accessTokenForUserID:(NSString *)uid;
+- (JDBAccessToken * _Nullable)accessTokenForUserID:(NSString *)uid NS_SWIFT_NAME(accessToken(for:));
 
 /// Delete a specific access token
 /// @param token The access token to delete
 /// @return whether the operation succeeded
-- (BOOL)removeAccessToken:(JDBAccessToken *)token;
+- (BOOL)removeAccessToken:(JDBAccessToken *)token NS_SWIFT_NAME(remove(_:));
 
 /// Delete all stored access tokens
 /// @return whether the operation succeeded

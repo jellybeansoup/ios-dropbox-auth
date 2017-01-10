@@ -35,12 +35,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) NSString *uid;
 
 /// Create an instance of the receiver with the access token and uid.
-- (instancetype)initWithAccessToken:(NSString *)accessToken uid:(NSString *)uid;
+- (instancetype)initWithAccessToken:(NSString *)accessToken uid:(NSString *)uid NS_SWIFT_NAME(init(string:uid:));
 
 /// Create a URL request from the given request, signed using the receiver.
 /// @param request The URL request to be signed.
 /// @request The signed URL request.
-- (NSURLRequest *)signedRequestFromRequest:(NSURLRequest *)request;
+- (NSURLRequest *)signedRequestFromRequest:(NSURLRequest *)request NS_SWIFT_NAME(signedRequest(from:));
 
 /// Create a URL request with the given URL, cache policy and timeout, signed using the receiver.
 /// This method replicates the `requestWithURL:cachePolicy:timeoutInterval:` method on `NSURLRequest`, while also signing for access to the API.
@@ -48,13 +48,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param cachePolicy The cache policy for the new request.
 /// @param timeoutInterval The timeout interval for the new request, in seconds.
 /// @request The signed URL request.
-- (NSURLRequest *)signedRequestWithURL:(NSURL *)url cachePolicy:(NSURLRequestCachePolicy)cachePolicy timeoutInterval:(NSTimeInterval)timeoutInterval;
+- (NSURLRequest *)signedRequestWithURL:(NSURL *)url cachePolicy:(NSURLRequestCachePolicy)cachePolicy timeoutInterval:(NSTimeInterval)timeoutInterval NS_SWIFT_NAME(signedRequest(with:cachePolicy:timeoutInterval:));
 
 /// Create a URL request from the given URL, signed using the receiver.
 /// This method replicates the `requestWithURL:` method on `NSURLRequest`, while also signing for access to the API.
 /// @param url The URL for the new request.
 /// @request The signed URL request.
-- (NSURLRequest *)signedRequestWithURL:(NSURL *)url;
+- (NSURLRequest *)signedRequestWithURL:(NSURL *)url NS_SWIFT_NAME(signedRequest(with:));
 
 @end
 

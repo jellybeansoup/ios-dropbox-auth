@@ -93,14 +93,14 @@
 // These wrappers hit the keychain twice to avoid inaccurate errors.
 // https://forums.developer.apple.com/thread/4743
 
-+ (CFDataRef *)jsm_query:(NSDictionary *)query {
++ (CFTypeRef)jsm_query:(NSDictionary *)query {
 	CFDictionaryRef queryRef = (__bridge CFDictionaryRef)query;
 
-	CFDataRef dataResult = NULL;
-	OSStatus status = SecItemCopyMatching(queryRef, (CFTypeRef *)&dataResult);
+	CFTypeRef dataResult = NULL;
+	OSStatus status = SecItemCopyMatching(queryRef, &dataResult);
 
 	if( status != noErr ) {
-		status = SecItemCopyMatching(queryRef, (CFTypeRef *)&dataResult);
+		status = SecItemCopyMatching(queryRef, &dataResult);
 	}
 
 	if( status != noErr ) {
@@ -113,7 +113,6 @@
 + (BOOL)jsm_delete:(NSDictionary *)query {
 	CFDictionaryRef queryRef = (__bridge CFDictionaryRef)query;
 
-	CFDataRef dataResult = NULL;
 	OSStatus status = SecItemDelete(queryRef);
 
 	if( status != noErr ) {

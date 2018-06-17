@@ -315,7 +315,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 - (BOOL)addAccessToken:(JDBAccessToken *)token {
 	BOOL success = [JDBKeychainManager setValue:token.accessToken forKey:token.uid];
 
-	if( success && self.delegate && [self.delegate respondsToSelector:@selector(authManager:didAddAccessToken:)] ) {
+	if( success && self.delegate ) {
 		[self.delegate authManager:self didAddAccessToken:token];
 	}
 
@@ -325,7 +325,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 - (BOOL)removeAccessToken:(JDBAccessToken *)token {
 	BOOL success = [JDBKeychainManager removeValueForKey:token.uid];
 
-	if( success && self.delegate && [self.delegate respondsToSelector:@selector(authManager:didRemoveAccessToken:)] ) {
+	if( success && self.delegate ) {
 		[self.delegate authManager:self didRemoveAccessToken:token];
 	}
 	
@@ -339,7 +339,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 	for( JDBAccessToken *token in accessTokens ) {
 		if( [self accessTokenForUserID:token.uid] ) continue;
-		if( self.delegate && [self.delegate respondsToSelector:@selector(authManager:didRemoveAccessToken:)] ) {
+		if( self.delegate ) {
 			[self.delegate authManager:self didRemoveAccessToken:token];
 		}
 	}
@@ -393,9 +393,9 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 			NSUInteger foundCredentials = credentials.count;
 
-			if( foundCredentials > 0 && self.delegate && [self.delegate respondsToSelector:@selector(authManagerWillMigrateAccessTokens:)] ) {
+			if( foundCredentials > 0 && self.migrationDelegate ) {
 				dispatch_async(dispatch_get_main_queue(),^{
-					[self.delegate authManagerWillMigrateAccessTokens:self];
+					[self.migrationDelegate authManagerWillMigrateAccessTokens:self];
 				});
 			}
 
@@ -408,7 +408,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 				[credentials removeObjectForKey:token.uid];
 			}
 
-			if( foundCredentials > 0 && self.delegate && [self.delegate respondsToSelector:@selector(authManager:didMigrateAccessTokens:)] ) {
+			if( foundCredentials > 0 && self.migrationDelegate ) {
 				JDBMigrationSuccess success = JDBMigrationFailed;
 				if( credentials.count == 0 ) {
 					success = JDBMigrationSuccessful;
@@ -417,7 +417,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 					success = JDBMigrationPartial;
 				}
 				dispatch_async(dispatch_get_main_queue(),^{
-					[self.delegate authManager:self didMigrateAccessTokens:success];
+					[self.migrationDelegate authManager:self didMigrateAccessTokens:success];
 				});
 			}
 

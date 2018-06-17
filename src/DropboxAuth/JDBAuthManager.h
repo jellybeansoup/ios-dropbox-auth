@@ -58,8 +58,7 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 
 @class JDBAuthManager;
 
-@protocol JDBAuthManagerDelegate <NSObject>
-@optional
+@protocol JDBAuthManagerDelegate
 
 /// Called when the auth manager adds a new access token.
 /// @param authManager The auth manager.
@@ -71,6 +70,10 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 /// @param accessToken The access token that was removed.
 - (void)authManager:(JDBAuthManager *)authManager didRemoveAccessToken:(JDBAccessToken *)accessToken NS_SWIFT_NAME(authManager(_:didRemove:));
 
+@end
+
+@protocol JDBAuthManagerMigrationDelegate
+
 /// Called when the auth manager detects access tokens to be migrated.
 /// @param authManager The auth manager.
 - (void)authManagerWillMigrateAccessTokens:(JDBAuthManager *)authManager NS_SWIFT_NAME(authManagerWillMigrateAccessTokens(_:));
@@ -78,22 +81,25 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 /// Called when the auth manager completes migration of access tokens.
 /// @param authManager The auth manager.
 /// @param success Flag to indicate if access tokens were migrated successfully.
-- (void)authManager:(JDBAuthManager *)authManager didMigrateAccessTokens:(JDBMigrationSuccess)success NS_SWIFT_NAME(authManagerDidRemoveAccessToken(_:success:));
+- (void)authManager:(JDBAuthManager *)authManager didMigrateAccessTokens:(JDBMigrationSuccess)success NS_SWIFT_NAME(authManagerDidMigrateAccessTokens(_:success:));
 
 @end
 
 @interface JDBAuthManager : NSObject
 
 /// Delegate which gets notified when changes occur.
-@property (nonatomic, strong, nullable) id<JDBAuthManagerDelegate> delegate;
+@property (nonatomic, weak, nullable) id<JDBAuthManagerDelegate> delegate;
+
+/// Delegate which gets notified when migration starts and finishes.
+@property (nonatomic, weak, nullable) id<JDBAuthManagerMigrationDelegate> migrationDelegate;
 
 /// The application's consumer key.
 /// Found in the Dropbox developer console: <https://www.dropbox.com/developers/apps>
-@property (nonatomic, strong, readonly) NSString *appKey;
+@property (nonatomic, copy, readonly) NSString *appKey;
 
 /// The application's consumer secret.
 /// This is only used for migration of OAuth 1.0 access tokens, and can be `nil` (which will prevent migration).
-@property (nonatomic, strong, readonly, nullable) NSString *appSecret;
+@property (nonatomic, copy, readonly, nullable) NSString *appSecret;
 
 // @name Instance
 

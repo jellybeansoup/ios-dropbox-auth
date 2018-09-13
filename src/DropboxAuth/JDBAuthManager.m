@@ -355,7 +355,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 - (void)safariViewControllerDidFinish:(SFSafariViewController *)controller NS_CLASS_AVAILABLE_IOS(9_0) {
 	[self.safariViewController dismissViewControllerAnimated:YES completion:^{
-		_safariViewController = nil;
+		self->_safariViewController = nil;
 	}];
 }
 

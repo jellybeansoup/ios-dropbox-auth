@@ -4,7 +4,7 @@ In occasions when the official SDK for Dropbox is too heavy or too restricting, 
 
 ##Released under the BSD License
 
-Copyright © 2016 Daniel Farrelly
+Copyright © 2019 Daniel Farrelly
 
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:

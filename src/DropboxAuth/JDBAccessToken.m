@@ -22,7 +22,7 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#import <DropboxAuth/JDBAccessToken.h>
+#import "JDBAccessToken.h"
 
 @implementation JDBAccessToken
 

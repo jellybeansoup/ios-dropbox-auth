@@ -23,7 +23,7 @@
 //
 
 @import Security;
-#import <DropboxAuth/JDBKeychainManager.h>
+#import "JDBKeychainManager.h"
 
 @implementation JDBKeychainManager
 

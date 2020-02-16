@@ -32,5 +32,5 @@ extern double DropboxAuthVersionNumber;
 extern const unsigned char DropboxAuthVersionString[];
 
 //! Import public headers
-#import <DropboxAuth/JDBAuthManager.h>
-#import <DropboxAuth/JDBAccessToken.h>
+#import "JDBAuthManager.h"
+#import "JDBAccessToken.h"

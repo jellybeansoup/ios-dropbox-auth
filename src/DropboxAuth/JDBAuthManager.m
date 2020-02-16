@@ -24,8 +24,8 @@
 
 @import SafariServices;
 #import <CommonCrypto/CommonHMAC.h>
-#import <DropboxAuth/JDBAuthManager.h>
-#import <DropboxAuth/JDBKeychainManager.h>
+#import "JDBAuthManager.h"
+#import "JDBKeychainManager.h"
 
 NSString *const kDBLinkNonce = @"dropbox.sync.nonce";
 

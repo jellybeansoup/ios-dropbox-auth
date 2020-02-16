@@ -36,6 +36,7 @@
 		A17135301850090C00E56C4D /* DropboxAuth.podspec */ = {isa = PBXFileReference; lastKnownFileType = text; path = DropboxAuth.podspec; sourceTree = "<group>"; };
 		A17135311850094B00E56C4D /* DropboxAuth_Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DropboxAuth_Prefix.pch; path = src/DropboxAuth/DropboxAuth_Prefix.pch; sourceTree = SOURCE_ROOT; };
 		A171353818500A1A00E56C4D /* DropboxAuth.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DropboxAuth.h; sourceTree = "<group>"; };
+		A171A19923F80A1A00C0BC99 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		A184EE0E220D9E1C00E107FB /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = src/DropboxAuth/Info.plist; sourceTree = "<group>"; };
 		A1A787381C7BED9C0095A0EF /* DropboxAuth.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = DropboxAuth.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1A787461C7BFC310095A0EF /* JDBAuthManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JDBAuthManager.h; sourceTree = "<group>"; };
@@ -65,6 +66,7 @@
 				A1713506185007F800E56C4D /* Products */,
 				A171352E185008F400E56C4D /* LICENSE */,
 				A171352F185008F400E56C4D /* README.md */,
+				A171A19923F80A1A00C0BC99 /* Package.swift */,
 				A17135301850090C00E56C4D /* DropboxAuth.podspec */,
 			);
 			sourceTree = "<group>";

@@ -24,7 +24,7 @@
 
 @import Foundation;
 @import UIKit;
-#import <DropboxAuth/JDBAccessToken.h>
+#import "JDBAccessToken.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

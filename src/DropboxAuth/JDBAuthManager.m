@@ -183,13 +183,44 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 	}
 
 	NSString *nonce = [[NSUUID UUID] UUIDString];
+	NSURL *url = [self dAuthURL:nonce];
+
+	if( ! [[UIApplication sharedApplication] canOpenURL:url] ) {
+		return NO;
+	}
+
 	[[NSUserDefaults standardUserDefaults] setObject:nonce forKey:kDBLinkNonce];
 	[[NSUserDefaults standardUserDefaults] synchronize];
-	return [[UIApplication sharedApplication] openURL:[self dAuthURL:nonce]];
+
+	if (@available(iOS 10.0, *)) {
+		[[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
+
+		return YES;
+	}
+	else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+		return [[UIApplication sharedApplication] openURL:url];
+#pragma clang diagnostic pop
+	}
 }
 
 - (BOOL)authorizeInSafari NS_EXTENSION_UNAVAILABLE_IOS("Use the `authViewController` where appropriate instead.") {
-	return [[UIApplication sharedApplication] openURL:[self authURL]];
+	if( ! [[UIApplication sharedApplication] canOpenURL:[self authURL]] ) {
+		return NO;
+	}
+
+	if (@available(iOS 10.0, *)) {
+		[[UIApplication sharedApplication] openURL:[self authURL] options:@{} completionHandler:nil];
+
+		return YES;
+	}
+	else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+		return [[UIApplication sharedApplication] openURL:[self authURL]];
+#pragma clang diagnostic pop
+	}
 }
 
 - (UIViewController *)authViewController NS_CLASS_AVAILABLE_IOS(9_0) {
@@ -443,7 +474,15 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 	SecItemDelete((__bridge CFDictionaryRef)@{(__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
 											  (__bridge id)kSecAttrService: keychainID});
 
-	return [NSKeyedUnarchiver unarchiveObjectWithData:foundValue];
+	if (@available(iOS 11.0, *)) {
+		return [NSKeyedUnarchiver unarchivedObjectOfClass:[NSDictionary class] fromData:foundValue error:nil];
+	}
+	else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+		return [NSKeyedUnarchiver unarchiveObjectWithData:foundValue];
+#pragma clang diagnostic pop
+	}
 }
 
 //! Get an OAuth2 token from Dropbox using a given OAuth1 token and token secret.

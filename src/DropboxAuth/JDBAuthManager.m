@@ -23,6 +23,7 @@
 //
 
 @import SafariServices;
+@import AuthenticationServices;
 #import <CommonCrypto/CommonHMAC.h>
 #import "JDBAuthManager.h"
 #import "JDBKeychainManager.h"
@@ -61,6 +62,10 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 @property (nonatomic, strong, readonly) NSURL *dauthRedirectURL;
 
 @property (nonatomic, strong, readonly) SFSafariViewController *safariViewController;
+
+@property (nonatomic, strong, readonly) SFAuthenticationSession *sfAuthenticationSession API_AVAILABLE(ios(11.0));
+
+@property (nonatomic, strong, readonly) ASWebAuthenticationSession *asWebAuthenticationSession API_AVAILABLE(ios(12.0));
 
 @end
 
@@ -165,15 +170,72 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
     return NO;
 }
 
-- (void)authorizeFromController:(UIViewController *)controller NS_EXTENSION_UNAVAILABLE_IOS("Use the `authViewController` where appropriate instead.") {
-	if( ! [self authorizeWithDropboxApp] ) {
-		if( NSClassFromString(@"SFSafariViewController") != nil ) {
-			[controller presentViewController:self.authViewController animated:YES completion:nil];
+- (void)authorizeFromController:(UIViewController *)controller {
+	[self authorizeFromController:controller completion:nil];
+}
+
+- (void)authorizeFromController:(UIViewController *)controller completion:(void(^ _Nullable)(JDBAccessToken *accessToken, NSError *error))completion {
+	if( @available(iOS 12.0, *) ) {
+		NSURL *url = [self authURL];
+		NSString *scheme = [NSString stringWithFormat:@"db-%@", self.appKey];
+
+		_asWebAuthenticationSession = [[ASWebAuthenticationSession alloc] initWithURL:url callbackURLScheme:scheme completionHandler:^(NSURL *callbackURL, NSError *error) {
+			if( error != nil && completion != nil ) {
+				completion(nil, error);
+			}
+			else if (error == nil) {
+				NSError *tokenError;
+				JDBAccessToken *accessToken = [self handleRedirectURL:callbackURL error:&tokenError];
+
+				if( completion != nil ) {
+					completion(accessToken, tokenError);
+				}
+			}
+		}];
+
+		if( @available(iOS 13.0, *) ) {
+			if( [controller conformsToProtocol:@protocol(ASWebAuthenticationPresentationContextProviding)] ) {
+				_asWebAuthenticationSession.presentationContextProvider = (id<ASWebAuthenticationPresentationContextProviding>)controller;
+			}
 		}
-		else {
-			[self authorizeInSafari];
+
+		if( [_asWebAuthenticationSession start] ) {
+			return;
 		}
 	}
+	else if( @available(iOS 11.0, *) ) {
+		NSURL *url = [self authURL];
+		NSString *scheme = [NSString stringWithFormat:@"db-%@", self.appKey];
+
+		_sfAuthenticationSession = [[SFAuthenticationSession alloc] initWithURL:url callbackURLScheme:scheme completionHandler:^(NSURL *callbackURL, NSError *error) {
+			if( error != nil && completion != nil ) {
+				completion(nil, error);
+			}
+			else if (error == nil) {
+				NSError *tokenError;
+				JDBAccessToken *accessToken = [self handleRedirectURL:callbackURL error:&tokenError];
+
+				if( completion != nil ) {
+					completion(accessToken, tokenError);
+				}
+			}
+		}];
+
+		if( [_sfAuthenticationSession start] ) {
+			return;
+		}
+	}
+
+	if( [self authorizeWithDropboxApp] ) {
+		return;
+	}
+	else if( NSClassFromString(@"SFSafariViewController") != nil ) {
+		[controller presentViewController:self.authViewController animated:YES completion:nil];
+	}
+	else {
+		[self authorizeInSafari];
+	}
+
 }
 
 - (BOOL)authorizeWithDropboxApp NS_EXTENSION_UNAVAILABLE_IOS("Use the `authViewController` where appropriate instead.") {

@@ -128,7 +128,13 @@ typedef NS_ENUM(NSInteger, JDBMigrationSuccess) {
 /// Present the OAuth2 authorization request page by presenting a web view controller modally.
 /// This is the equivalent of the Dropbox SDK's method of the same name.
 /// @param controller The controller to present from.
-- (void)authorizeFromController:(UIViewController *)controller NS_SWIFT_NAME(authorize(from:)) NS_EXTENSION_UNAVAILABLE_IOS("Use the `authViewController` where appropriate instead.");
+- (void)authorizeFromController:(UIViewController *)controller NS_SWIFT_NAME(authorize(from:));
+
+/// Present the OAuth2 authorization request page by presenting a web view controller modally.
+/// This is the equivalent of the Dropbox SDK's method of the same name.
+/// @param controller The controller to present from.
+/// @param completion Handler called when `ASWebAuthenticationSession` or `SFAuthenticationSession` completes authentication.
+- (void)authorizeFromController:(UIViewController *)controller completion:(void(^ _Nullable)(JDBAccessToken * _Nullable accessToken, NSError * _Nullable error))completion NS_SWIFT_NAME(authorize(from:completion:));
 
 /// Try to handle a redirect back into the application
 /// @param url The URL to attempt to handle.

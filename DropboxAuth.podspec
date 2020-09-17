@@ -6,7 +6,7 @@ Pod::Spec.new do |s|
   s.license      = { :type => 'BSD', :file => 'LICENSE' }
   s.author       = { "Daniel Farrelly" => "daniel@jellystyle.com" }
   s.source       = { :git => "https://github.com/jellybeansoup/ios-dropbox-auth.git", :tag => "v0.1.0" }
-  s.platform     = :ios, '8.4'
+  s.platform     = :ios, '11.0'
   s.requires_arc = true
   s.source_files = 'src/DropboxAuth/*.{h,m}'
   s.public_header_files = 'src/DropboxAuth/*.h'

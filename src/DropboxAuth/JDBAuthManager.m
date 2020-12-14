@@ -63,7 +63,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 
 @property (nonatomic, strong, readonly) SFSafariViewController *safariViewController;
 
-@property (nonatomic, strong, readonly) SFAuthenticationSession *sfAuthenticationSession API_AVAILABLE(ios(11.0));
+@property (nonatomic, strong, readonly) SFAuthenticationSession *sfAuthenticationSession API_DEPRECATED_WITH_REPLACEMENT("-asWebAuthenticationSession", ios(11.0, 12.0));
 
 @property (nonatomic, strong, readonly) ASWebAuthenticationSession *asWebAuthenticationSession API_AVAILABLE(ios(12.0));
 
@@ -204,6 +204,8 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 		}
 	}
 	else if( @available(iOS 11.0, *) ) {
+		#pragma clang diagnostic push
+		#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 		NSURL *url = [self authURL];
 		NSString *scheme = [NSString stringWithFormat:@"db-%@", self.appKey];
 
@@ -224,6 +226,7 @@ static JSMOAuth2Error JSMOAuth2ErrorFromString(NSString *errorCode) {
 		if( [_sfAuthenticationSession start] ) {
 			return;
 		}
+		#pragma clang diagnostic pop
 	}
 
 	if( [self authorizeWithDropboxApp] ) {

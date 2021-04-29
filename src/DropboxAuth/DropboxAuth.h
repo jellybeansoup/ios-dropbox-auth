@@ -34,3 +34,4 @@ extern const unsigned char DropboxAuthVersionString[];
 //! Import public headers
 #import "JDBAuthManager.h"
 #import "JDBAccessToken.h"
+#import "JDBKeychainManager.h"

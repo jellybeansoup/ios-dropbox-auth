@@ -11,7 +11,6 @@ let package = Package(
         .target(
             name: "DropboxAuth",
 			dependencies: [],
-            path: "src/DropboxAuth",
             //sources: ["DropboxAuth.h"],
 			publicHeadersPath: "."
         )

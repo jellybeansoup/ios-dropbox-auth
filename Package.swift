@@ -3,16 +3,23 @@ import PackageDescription
 
 let package = Package(
     name: "DropboxAuth",
-	platforms: [.iOS("11.0")],
+	platforms: [.iOS("13.0")],
     products: [
-        .library(name: "DropboxAuth", targets: ["DropboxAuth"])
+        .library(name: "DropboxAuth", targets: ["DropboxAuthSwift"])
     ],
     targets: [
-        .target(
-            name: "DropboxAuth",
+		.target(
+			name: "DropboxAuth",
 			dependencies: [],
-            //sources: ["DropboxAuth.h"],
+			//sources: ["DropboxAuth.h"],
 			publicHeadersPath: "."
-        )
+		),
+		.target(
+			name: "DropboxAuthSwift"
+		),
+		.testTarget(
+			name: "DropboxAuthTests",
+			dependencies: ["DropboxAuthSwift"]
+		)
     ]
 )

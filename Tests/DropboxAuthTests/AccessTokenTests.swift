@@ -1,5 +1,5 @@
 //
-// Copyright © 2016 Daniel Farrelly
+// Copyright © 2022 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -22,19 +22,12 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#import "AppDelegate.h"
+import XCTest
+@testable import DropboxAuthSwift
 
-@implementation AppDelegate
+class AccessTokenTests: XCTestCase {
 
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-	_dropboxAuthManager = [[JDBAuthManager alloc] initWithAppKey:@"d25u9w2pgql046o"];
-	return YES;
+    func testExample() throws {
+    }
+
 }
-
-- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<NSString *,id> *)options {
-	NSError *error;
-	BOOL success = [self.dropboxAuthManager handleRedirectURL:url error:&error];
-	return success;
-}
-
-@end

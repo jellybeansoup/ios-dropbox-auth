@@ -2,6 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:/Users/Jelly/Desktop/ios-dropbox-auth/DropboxAuth.xcodeproj">
+      location = "self:">
    </FileRef>
 </Workspace>

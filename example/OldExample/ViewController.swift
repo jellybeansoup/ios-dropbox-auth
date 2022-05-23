@@ -1,5 +1,5 @@
 //
-// Copyright © 2016 Daniel Farrelly
+// Copyright © 2022 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -22,13 +22,16 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-@import UIKit;
-@import DropboxAuth;
+import UIKit
+import DropboxAuth
 
-@interface AppDelegate : UIResponder <UIApplicationDelegate>
+class ViewController: UIViewController {
 
-@property (strong, nonatomic) UIWindow *window;
+	@IBOutlet var connectButton: UIButton!
 
-@property (strong, nonatomic, readonly) JDBAuthManager *dropboxAuthManager;
+	@IBOutlet var accountView: UIView!
 
-@end
+	@IBOutlet var connectButton: UIButton!
+
+
+}

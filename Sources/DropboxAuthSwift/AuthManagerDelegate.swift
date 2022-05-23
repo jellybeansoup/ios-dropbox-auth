@@ -1,5 +1,5 @@
 //
-// Copyright © 2016 Daniel Farrelly
+// Copyright © 2022 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -22,13 +22,28 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#import <UIKit/UIKit.h>
+import Foundation
 
-#import "AppDelegate.h"
+public protocol AuthManagerDelegate: AnyObject {
 
-int main(int argc, char *argv[])
-{
-	@autoreleasepool {
-	    return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
-	}
+	/// Called when the auth manager adds a new access token.
+	/// - Parameters:
+	///   - authManager: The auth manager.
+	///   - accessToken: The access token that was added.
+	func authManager(_ authManager: AuthManager, didAdd accessToken: AccessToken)
+
+	/// Called when the auth manager removes an access token.
+	/// - Parameters:
+	///   - authManager: The auth manager.
+	///   - accessToken: The access token that was removed.
+	func authManager(_ authManager: AuthManager, didRemove accessToken: AccessToken)
+
+}
+
+public extension AuthManagerDelegate {
+
+	func authManager(_ authManager: AuthManager, didAdd accessToken: AccessToken) {}
+
+	func authManager(_ authManager: AuthManager, didRemove accessToken: AccessToken) {}
+
 }

@@ -23,37 +23,19 @@
 //
 
 import Foundation
+import CryptoKit
 
-extension Bundle {
+extension SHA256Digest {
 
-	func hasConfiguredScheme(_ configuredScheme: String) -> Bool {
-		guard let urlTypes = object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] else {
-			return false
+	var hexEncodedString: String {
+		let alphabet = Array("0123456789abcdef".utf8)
+		let codeUnits: [UTF8.CodeUnit] = reduce(into: []) { partialResult, element in
+			let indices = Int(element).quotientAndRemainder(dividingBy: 0x10)
+			partialResult.append(alphabet[indices.quotient])
+			partialResult.append(alphabet[indices.remainder])
 		}
 
-		for urlType in urlTypes {
-			guard let schemes = urlType["CFBundleURLSchemes"] as? [String] else {
-				continue
-			}
-
-			for scheme in schemes where scheme == configuredScheme {
-				return true
-			}
-		}
-
-		return false
-	}
-
-	var hasApplicationQueriesScheme: Bool {
-		guard let schemes = Bundle.main.object(forInfoDictionaryKey: "LSApplicationQueriesSchemes") as? [String] else {
-			return false
-		}
-
-		for scheme in schemes where scheme == "dbapi-2" {
-			return true
-		}
-
-		return false
+		return String(decoding: codeUnits, as: UTF8.self)
 	}
 
 }

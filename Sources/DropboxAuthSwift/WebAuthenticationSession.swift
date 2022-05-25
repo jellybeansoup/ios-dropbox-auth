@@ -35,7 +35,7 @@ class WebAuthenticationSession: NSObject {
 		assert(Bundle.main.hasConfiguredScheme("db-\(authManager.appKey)"))
 
 		self.session = ASWebAuthenticationSession(
-			url: URL.authenticationURL(for: authManager.appKey)!,
+			url: URL.authenticationURL(for: authManager)!,
 			callbackURLScheme: "db-\(authManager.appKey)",
 			completionHandler: { [weak authManager, completion] url, error in
 				do {

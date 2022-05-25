@@ -24,36 +24,21 @@
 
 import Foundation
 
-extension Bundle {
+class TransportManager {
 
-	func hasConfiguredScheme(_ configuredScheme: String) -> Bool {
-		guard let urlTypes = object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] else {
-			return false
-		}
+	let accessToken: AccessToken
 
-		for urlType in urlTypes {
-			guard let schemes = urlType["CFBundleURLSchemes"] as? [String] else {
-				continue
-			}
+	let urlSession: URLSession
 
-			for scheme in schemes where scheme == configuredScheme {
-				return true
-			}
-		}
-
-		return false
+	init(accessToken: AccessToken, urlSession: URLSession = .shared) {
+		self.accessToken = accessToken
+		self.urlSession = urlSession
 	}
 
-	var hasApplicationQueriesScheme: Bool {
-		guard let schemes = Bundle.main.object(forInfoDictionaryKey: "LSApplicationQueriesSchemes") as? [String] else {
-			return false
-		}
+	
 
-		for scheme in schemes where scheme == "dbapi-2" {
-			return true
-		}
 
-		return false
-	}
+
+
 
 }

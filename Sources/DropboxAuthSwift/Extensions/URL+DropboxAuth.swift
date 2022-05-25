@@ -26,18 +26,18 @@ import Foundation
 
 extension URL {
 
-	static func authenticationURL(for appKey: String) -> URL? {
+	static func authenticationURL(for authManager: AuthManager) -> URL? {
 		var components = URLComponents()
 		components.scheme = "https"
 		components.host = "www.dropbox.com"
 		components.path = "/oauth2/authorize"
 		components.queryItems = [
-			URLQueryItem(name: "response_type", value: "token"),
-//			URLQueryItem(name: "code_challenge", value: "token"),
-//			URLQueryItem(name: "code_challenge_method", value: "S256"),
-			URLQueryItem(name: "client_id", value: appKey),
-			URLQueryItem(name: "redirect_uri", value: "db-\(appKey)://2/token"),
-//			URLQueryItem(name: "token_access_type", value: "offline"),
+			URLQueryItem(name: "response_type", value: "code"),
+			URLQueryItem(name: "code_challenge", value: authManager.pckeCode.challenge),
+			URLQueryItem(name: "code_challenge_method", value: "S256"),
+			URLQueryItem(name: "client_id", value: authManager.appKey),
+			URLQueryItem(name: "redirect_uri", value: authManager.redirectURI),
+			URLQueryItem(name: "token_access_type", value: "offline"),
 			URLQueryItem(name: "disable_signup", value: "true"),
 		]
 

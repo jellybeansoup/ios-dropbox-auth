@@ -23,6 +23,8 @@
 //
 
 import UIKit
+import CryptoKit
+import Combine
 
 public class AuthManager {
 
@@ -33,34 +35,26 @@ public class AuthManager {
 	/// Found in the Dropbox developer console: <https://www.dropbox.com/developers/apps>
 	public let appKey: String
 
-	/// A secret string used to verify authorization codes returned by Dropbox as part of the PCKE flow.
-	public let appSecret: String
-
 	/// The manager used to store and retrieve tokens from the Keychain.
 	private let keychainManager: KeychainManager
 
 	/// Create an auth manager with the given app key.
 	/// - Parameters:
 	///   - key The app key to use for authorisation (optional).
-	///   - secret The app secret to use for migrating OAuth 1.0 access tokens.
 	public convenience init(
-		key: String,
-		secret: String
+		key: String
 	) {
 		self.init(
 			key: key,
-			secret: secret,
 			keychainManager: .init()
 		)
 	}
 
 	internal init(
 		key: String,
-		secret: String,
 		keychainManager: KeychainManager = .init()
 	) {
 		self.appKey = key
-		self.appSecret = secret
 		self.keychainManager = keychainManager
 	}
 
@@ -97,6 +91,21 @@ public class AuthManager {
 
 		return true
 	}
+
+	// MARK: Authorization
+
+	internal lazy var pckeCode = PCKECode()
+
+	internal lazy var redirectURI = "db-\(appKey)://2/token"
+
+	//	self.appSecret = SHA256.hash(data: Data(secret.utf8))
+
+
+
+
+
+
+
 
 	// MARK: Handling authorization in-app
 
@@ -156,6 +165,8 @@ public class AuthManager {
 
 	// MARK: Handling authentication in browser
 
+	private var tokenSubscriptions: [AnyCancellable] = []
+
 	/// Hands off to the default web browser on the device to authenticate.
 	/// - Note: To receive the access token from this flow, you must call `handle(_:)` with the
 	/// 	response URL, which will be parsed to retrieve and then store the access token.
@@ -166,17 +177,39 @@ public class AuthManager {
 	@MainActor public func authenticateInBrowser(
 		urlHandler: @MainActor (_ url: URL) -> Bool = AuthManager.defaultURLHandler
 	) -> Bool {
-		return urlHandler(URL.authenticationURL(for: appKey)!)
+		return urlHandler(URL.authenticationURL(for: self)!)
 	}
 
 	/// Try to handle a redirect back into the application
 	/// - Parameter url: The URL to attempt to handle.
 	/// - Returns: Returns the `AccessToken` if the redirect URL can be handled successfully.
-	public func handle(_ url: URL, completion: (_ result: Result<AccessToken, Error>) -> ()) {
+	public func handle(_ url: URL, completion: @escaping (_ result: Result<AccessToken, Error>) -> ()) {
 		do {
-			let token = try AccessToken(redirectURL: url)
-			_ = add(token)
-			completion(.success(token))
+			let parameters = url.query?.queryParameters
+
+			if let code = parameters?["code"] {
+				AccessTokenRequest(
+					appKey: appKey,
+					source: .exchange(
+						code: code,
+						verifier: pckeCode.verifier,
+						redirectURI: redirectURI
+					)
+				)
+				.perform { [weak self] result in
+					if case .success(let token) = result, let self = self {
+						_ = self.add(token)
+					}
+
+					completion(result)
+				}
+			}
+			else if let error = parameters?["error"] {
+				throw AuthError(string: error)
+			}
+			else {
+				throw AuthError.unknown
+			}
 		}
 		catch {
 			completion(.failure(error))
@@ -220,37 +253,43 @@ public class AuthManager {
 	/// - Parameter userID: The identifier representing the user whose token to retrieve.
 	/// - Returns: An access token if present, otherwise `nil`.
 	public func accessToken(for userID: String) -> AccessToken? {
-		guard let accessToken = keychainManager.string(forKey: userID) else {
-			return nil
-		}
+		fatalError()
 
-		return AccessToken(string: accessToken, uid: userID)
+//		guard let accessToken = keychainManager.string(forKey: userID) else {
+//			return nil
+//		}
+//
+//		return AccessToken(string: accessToken, uid: userID)
 	}
 
 	/// Add a specific access token
 	/// - Parameter accessToken: The access token to add.
 	/// - Returns: Flag indicating whether the operation succeeded.
 	internal func add(_ accessToken: AccessToken) -> Bool {
-		let success = keychainManager.setValue(accessToken.accessToken, forKey: accessToken.uid)
+		return true
 
-		if success, let delegate = delegate {
-			delegate.authManager(self, didAdd: accessToken)
-		}
-
-		return success
+//		let success = keychainManager.setValue(accessToken.accessToken, forKey: accessToken.uid)
+//
+//		if success, let delegate = delegate {
+//			delegate.authManager(self, didAdd: accessToken)
+//		}
+//
+//		return success
 	}
 
 	/// Delete a specific access token
 	/// - Parameter accessToken: The access token to delete.
 	/// - Returns: Flag indicating whether the operation succeeded.
 	public func remove(_ accessToken: AccessToken) -> Bool {
-		let success = keychainManager.removeValue(forKey: accessToken.uid)
+		return true
 
-		if success, let delegate = delegate {
-			delegate.authManager(self, didRemove: accessToken)
-		}
-
-		return success
+//		let success = keychainManager.removeValue(forKey: accessToken.uid)
+//
+//		if success, let delegate = delegate {
+//			delegate.authManager(self, didRemove: accessToken)
+//		}
+//
+//		return success
 	}
 
 	/// Delete all stored access tokens

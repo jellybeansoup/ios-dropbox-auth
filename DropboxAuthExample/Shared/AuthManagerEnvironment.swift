@@ -30,8 +30,7 @@ struct AuthManagerKey: EnvironmentKey {
 	typealias Value = AuthManager
 
 	static var defaultValue = AuthManager(
-		key: "d25u9w2pgql046o",
-		secret: "Lorem ipsum dolor sit amet."
+		key: "d25u9w2pgql046o"
 	)
 
 }

@@ -24,52 +24,29 @@
 
 import Foundation
 
-public struct AccessToken: CustomDebugStringConvertible {
+public struct AccessToken {
 
 	/// The access token string.
-	public let accessToken: String
+	public var accessToken: String
 
-	/// The associated user.
-	public let uid: String
+	public var expiresIn: TimeInterval
+
+	public let scope: String?
+
+	public let accountID: String
+
+	public let teamID: String?
+
+	public let refreshToken: String
 
 	/// Create an instance of the receiver with the access token and uid.
-	public init(string: String, uid: String) {
-		self.accessToken = string
-		self.uid = uid
-	}
-
-	internal init(redirectURL: URL) throws {
-		let parameters = redirectURL.fragment?.queryParameters ?? [:]
-
-		if let accessToken = parameters["access_token"], let uid = parameters["uid"] {
-			self.init(string: accessToken, uid: uid)
-		}
-		else if let error = parameters["error"] {
-			throw AuthError(string: error)
-		}
-		else {
-			throw AuthError.unknown
-		}
-	}
-
-	internal init(dauthURL: URL) throws {
-		guard dauthURL.path == "/connect" else {
-			throw AuthError.accessDenied
-		}
-
-		let parameters = dauthURL.query?.queryParameters ?? [:]
-		let state = parameters["state"]?.components(separatedBy: "%3A") ?? []
-		let nonce = UserDefaults.standard.string(forKey: "dropbox.sync.nonce")
-
-		guard state.count == 2, state[0] == "oauth2", state[1] == nonce else {
-			throw AuthError.unknown
-		}
-
-		guard let accessToken = parameters["oauth_token_secret"], let uid = parameters["uid"] else {
-			throw AuthError.unknown
-		}
-
-		self.init(string: accessToken, uid: uid)
+	public init(accessToken: String, expiresIn: TimeInterval, scope: String?, accountID: String, teamID: String?, refreshToken: String) {
+		self.accessToken = accessToken
+		self.expiresIn = expiresIn
+		self.scope = scope
+		self.accountID = accountID
+		self.teamID = teamID
+		self.refreshToken = refreshToken
 	}
 
 	// MARK: Signing URL requests
@@ -111,10 +88,10 @@ public struct AccessToken: CustomDebugStringConvertible {
 		))
 	}
 
-	// MARK: Custom debug string convertible
+	// MARK: Refreshing an access token
 
-	public var debugDescription: String {
-		return "AccessToken(uid: \(uid), accessToken: \(accessToken))"
+	public mutating func refresh() {
+
 	}
 
 }

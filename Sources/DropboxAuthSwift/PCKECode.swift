@@ -23,37 +23,24 @@
 //
 
 import Foundation
+import CryptoKit
 
-extension Bundle {
+struct PCKECode {
 
-	func hasConfiguredScheme(_ configuredScheme: String) -> Bool {
-		guard let urlTypes = object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] else {
-			return false
-		}
+	var method = "S256"
 
-		for urlType in urlTypes {
-			guard let schemes = urlType["CFBundleURLSchemes"] as? [String] else {
-				continue
-			}
+	var challenge: String
 
-			for scheme in schemes where scheme == configuredScheme {
-				return true
-			}
-		}
+	var verifier: String
 
-		return false
-	}
+	private static let alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-	var hasApplicationQueriesScheme: Bool {
-		guard let schemes = Bundle.main.object(forInfoDictionaryKey: "LSApplicationQueriesSchemes") as? [String] else {
-			return false
-		}
-
-		for scheme in schemes where scheme == "dbapi-2" {
-			return true
-		}
-
-		return false
+	init() {
+		verifier = String((0..<128).map { _ in PCKECode.alphabet.randomElement()! })
+		challenge = Data(SHA256.hash(data: Data(verifier.utf8))).base64EncodedString()
+			.replacingOccurrences(of: "/", with: "_")
+			.replacingOccurrences(of: "+", with: "-")
+			.replacingOccurrences(of: "=", with: "")
 	}
 
 }

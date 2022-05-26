@@ -29,7 +29,7 @@ struct ContentView: View {
 
 	@Environment(\.authManager) private static var authManager
 
-	@State private var accessToken: AccessToken? = ContentView.authManager.firstAccessToken
+	@State private var accessToken: AccessToken? = ContentView.authManager.store.first
 
 	@State private var isShowingAuthView = false
 
@@ -71,9 +71,12 @@ struct ContentView: View {
 	}
 
 	private func disconnect() {
-		if ContentView.authManager.removeAllAccessTokens() {
+		do {
+			try ContentView.authManager.store.removeAll()
+
 			accessToken = nil
 		}
+		catch {}
 	}
 
 }

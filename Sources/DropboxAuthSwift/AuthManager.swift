@@ -36,7 +36,7 @@ public class AuthManager {
 	public let appKey: String
 
 	/// The manager used to store and retrieve tokens from the Keychain.
-	private let keychainManager: KeychainManager
+	public let store: AccessTokenStore
 
 	/// Create an auth manager with the given app key.
 	/// - Parameters:
@@ -46,16 +46,16 @@ public class AuthManager {
 	) {
 		self.init(
 			key: key,
-			keychainManager: .init()
+			store: .init()
 		)
 	}
 
 	internal init(
 		key: String,
-		keychainManager: KeychainManager = .init()
+		store: AccessTokenStore = .init()
 	) {
 		self.appKey = key
-		self.keychainManager = keychainManager
+		self.store = store
 	}
 
 	// MARK: Defaults
@@ -196,9 +196,16 @@ public class AuthManager {
 						redirectURI: redirectURI
 					)
 				)
-				.perform { [weak self] result in
-					if case .success(let token) = result, let self = self {
-						_ = self.add(token)
+				.perform { [store] result in
+					if case .success(let token) = result {
+						do {
+							try store.save(token)
+						}
+						catch {
+							completion(.failure(error))
+
+							return
+						}
 					}
 
 					completion(result)
@@ -226,77 +233,6 @@ public class AuthManager {
 				continuation.resume(with: result)
 			}
 		}
-	}
-
-	// MARK: Handling access tokens
-
-	/// Flag that indicates if there are any stored access tokens.
-	public var hasAccessTokens: Bool {
-		return firstAccessToken != nil
-	}
-
-	/// All stored access tokens.
-	public var accessTokens: [AccessToken] {
-		return keychainManager.all.compactMap { accessToken(for: $0) }
-	}
-
-	/// The first access token found, if available.
-	public var firstAccessToken: AccessToken? {
-		guard let userID = keychainManager.all.first else {
-			return nil
-		}
-
-		return accessToken(for: userID)
-	}
-
-	/// Retrieve the access token for a particular user identifier
-	/// - Parameter userID: The identifier representing the user whose token to retrieve.
-	/// - Returns: An access token if present, otherwise `nil`.
-	public func accessToken(for userID: String) -> AccessToken? {
-		fatalError()
-
-//		guard let accessToken = keychainManager.string(forKey: userID) else {
-//			return nil
-//		}
-//
-//		return AccessToken(string: accessToken, uid: userID)
-	}
-
-	/// Add a specific access token
-	/// - Parameter accessToken: The access token to add.
-	/// - Returns: Flag indicating whether the operation succeeded.
-	internal func add(_ accessToken: AccessToken) -> Bool {
-		return true
-
-//		let success = keychainManager.setValue(accessToken.accessToken, forKey: accessToken.uid)
-//
-//		if success, let delegate = delegate {
-//			delegate.authManager(self, didAdd: accessToken)
-//		}
-//
-//		return success
-	}
-
-	/// Delete a specific access token
-	/// - Parameter accessToken: The access token to delete.
-	/// - Returns: Flag indicating whether the operation succeeded.
-	public func remove(_ accessToken: AccessToken) -> Bool {
-		return true
-
-//		let success = keychainManager.removeValue(forKey: accessToken.uid)
-//
-//		if success, let delegate = delegate {
-//			delegate.authManager(self, didRemove: accessToken)
-//		}
-//
-//		return success
-	}
-
-	/// Delete all stored access tokens
-	/// - Returns: Flag indicating whether the operation succeeded.
-	@discardableResult
-	public func removeAllAccessTokens() -> Bool {
-		return keychainManager.removeAll()
 	}
 
 }

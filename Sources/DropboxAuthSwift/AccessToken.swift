@@ -24,7 +24,7 @@
 
 import Foundation
 
-public struct AccessToken {
+public struct AccessToken: Codable {
 
 	/// The access token string.
 	public var accessToken: String

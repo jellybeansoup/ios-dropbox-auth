@@ -27,13 +27,21 @@ import Combine
 
 class AccessTokenRequest {
 
+	/// The application's consumer key.
+	/// Found in the Dropbox developer console: <https://www.dropbox.com/developers/apps>
 	let appKey: String
 
+	/// Value that indicates the type of token request being made.
 	let source: Source
 
 	enum Source {
+
+		/// Request that exchanges a code returned from Dropbox via a callback URL for an access token.
 		case exchange(code: String, verifier: String, redirectURI: String)
+
+		/// Request that uses the long-lived `refreshToken` to refresh the short-lived `accessToken`.
 		case refresh(token: AccessToken)
+
 	}
 
 	init(appKey: String, source: Source) {
@@ -47,29 +55,40 @@ class AccessTokenRequest {
 
 	private var retainSelf: AccessTokenRequest?
 
-	func perform(completion: @escaping (Result<AccessToken, Error>) -> Void) {
+	func perform(
+		urlSession: URLSession = .shared,
+		completion: @escaping (Result<AccessToken, Error>) -> Void
+	) {
 		var request = URLRequest(url: URL(string: "https://api.dropbox.com/oauth2/token")!)
 		request.httpMethod = "POST"
 		request.httpBody = multipartEncodedData
 		request.addValue("multipart/form-data; charset=utf-8; boundary=\(multipartBoundary)", forHTTPHeaderField: "Content-Type")
 
-		let decoder = JSONDecoder()
-
 		retainSelf = self
-		dataSubscription = URLSession.shared.dataTaskPublisher(for: request)
+		dataSubscription = urlSession.dataTaskPublisher(for: request)
 			.tryCompactMap { [source] value -> AccessToken in
-				switch source {
-				case .exchange:
-					return try decoder.decode(
-						ExchangeResponse.self,
-						from: value.data
-					).construct()
+				let decoder = JSONDecoder()
 
-				case .refresh(let token):
-					return try decoder.decode(
-						RefreshResponse.self,
+				do {
+					switch source {
+					case .exchange:
+						return try decoder.decode(
+							ExchangeResponse.self,
+							from: value.data
+						).construct()
+
+					case .refresh(let token):
+						return try decoder.decode(
+							RefreshResponse.self,
+							from: value.data
+						).updating(token)
+					}
+				}
+				catch {
+					throw (try? decoder.decode(
+						AuthError.self,
 						from: value.data
-					).updating(token)
+					)) ?? error
 				}
 			}
 			.sink(
@@ -110,7 +129,7 @@ class AccessTokenRequest {
 		func construct() -> AccessToken {
 			return AccessToken(
 				accessToken: accessToken,
-				expiresIn: expiresIn,
+				expiryDate: .init(timeIntervalSinceNow: expiresIn),
 				scope: scope,
 				accountID: accountID,
 				teamID: teamID,
@@ -132,7 +151,7 @@ class AccessTokenRequest {
 		func updating(_ token: AccessToken) -> AccessToken {
 			var token = token
 			token.accessToken = accessToken
-			token.expiresIn = expiresIn
+			token.expiryDate = .init(timeIntervalSinceNow: expiresIn)
 			return token
 		}
 
@@ -161,7 +180,8 @@ class AccessTokenRequest {
 			appendMultipart(to: &multipart, value: "authorization_code", name: .grantType)
 
 		case .refresh(let token):
-			appendMultipart(to: &multipart, value: token.accessToken, name: .refreshToken)
+			appendMultipart(to: &multipart, value: token.refreshToken, name: .refreshToken)
+			appendMultipart(to: &multipart, value: appKey, name: .clientID)
 			appendMultipart(to: &multipart, value: "refresh_token", name: .grantType)
 		}
 
@@ -183,6 +203,3 @@ class AccessTokenRequest {
 	}
 
 }
-
-
-

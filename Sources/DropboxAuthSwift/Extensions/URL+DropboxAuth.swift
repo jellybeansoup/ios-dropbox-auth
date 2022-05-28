@@ -36,7 +36,7 @@ extension URL {
 			URLQueryItem(name: "code_challenge", value: authManager.pckeCode.challenge),
 			URLQueryItem(name: "code_challenge_method", value: "S256"),
 			URLQueryItem(name: "client_id", value: authManager.appKey),
-			URLQueryItem(name: "redirect_uri", value: authManager.redirectURI),
+			URLQueryItem(name: "redirect_uri", value: authManager.redirectURI.absoluteString),
 			URLQueryItem(name: "token_access_type", value: "offline"),
 			URLQueryItem(name: "disable_signup", value: "true"),
 		]

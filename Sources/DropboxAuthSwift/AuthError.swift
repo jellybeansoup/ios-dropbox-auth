@@ -25,7 +25,7 @@
 import Foundation
 
 /// Flag for indicating the reason authorisation failed.
-public enum AuthError: Int, Error, CustomNSError {
+public enum AuthError: Int, Error, CustomNSError, Decodable {
 
 	/// Some other error (outside of the OAuth2 specification)
 	case unknown = 0
@@ -39,14 +39,17 @@ public enum AuthError: Int, Error, CustomNSError {
 	/// The authorization server does not support obtaining an access token using this method.
 	case unsupportedResponseType = 3
 
+	/// The request is invalid.
+	case invalidRequest = 4
+
 	/// The requested scope is invalid, unknown, or malformed.
-	case invalidScope = 4
+	case invalidScope = 5
 
 	/// The authorization server encountered an unexpected condition that prevented it from fulfilling the request.
-	case serverError = 5
+	case serverError = 6
 
 	/// The authorization server is currently unable to handle the request due to a temporary overloading or maintenance of the server.
-	case temporarilyUnavailable = 6
+	case temporarilyUnavailable = 7
 
 	init(string: String) {
 		switch string {
@@ -58,6 +61,9 @@ public enum AuthError: Int, Error, CustomNSError {
 
 		case "unsupported_response_type":
 			self = .unsupportedResponseType
+
+		case "invalid_request":
+			self = .invalidRequest
 
 		case "invalid_scope":
 			self = .invalidScope
@@ -85,6 +91,8 @@ public enum AuthError: Int, Error, CustomNSError {
 			return NSLocalizedString("The resource owner or authorization server denied the request.", comment: "AuthError.accessDenied")
 		case .unsupportedResponseType:
 			return NSLocalizedString("The authorization server does not support obtaining an access token using this method.", comment: "AuthError.unsupportedResponseType")
+		case .invalidRequest:
+			return NSLocalizedString("The request is invalid.", comment: "AuthError.invalidRequest")
 		case .invalidScope:
 			return NSLocalizedString("The requested scope is invalid, unknown, or malformed.", comment: "AuthError.invalidScope")
 		case .serverError:
@@ -102,6 +110,18 @@ public enum AuthError: Int, Error, CustomNSError {
 
 	public var errorCode: Int {
 		return rawValue
+	}
+
+	// MARK: Decodable
+
+	enum CodingKeys: String, CodingKey {
+		case error
+	}
+
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		let string = try container.decode(String.self, forKey: .error)
+		self = AuthError(string: string)
 	}
 
 }

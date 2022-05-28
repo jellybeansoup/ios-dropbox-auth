@@ -38,23 +38,33 @@ public class AuthManager {
 	/// The manager used to store and retrieve tokens from the Keychain.
 	public let store: AccessTokenStore
 
+	///
+	public var redirectURI: URL
+
+	/// A series of client-generated codes used to authenticate token requests.
+	internal lazy var pckeCode = PCKECode()
+
 	/// Create an auth manager with the given app key.
 	/// - Parameters:
 	///   - key The app key to use for authorisation (optional).
 	public convenience init(
-		key: String
+		key: String,
+		redirectURI: URL? = nil
 	) {
 		self.init(
 			key: key,
+			redirectURI: redirectURI,
 			store: .init()
 		)
 	}
 
 	internal init(
 		key: String,
+		redirectURI: URL? = nil,
 		store: AccessTokenStore = .init()
 	) {
 		self.appKey = key
+		self.redirectURI = redirectURI ?? URL(string: "db-\(appKey)://2/token")!
 		self.store = store
 	}
 
@@ -91,21 +101,6 @@ public class AuthManager {
 
 		return true
 	}
-
-	// MARK: Authorization
-
-	internal lazy var pckeCode = PCKECode()
-
-	internal lazy var redirectURI = "db-\(appKey)://2/token"
-
-	//	self.appSecret = SHA256.hash(data: Data(secret.utf8))
-
-
-
-
-
-
-
 
 	// MARK: Handling authorization in-app
 
@@ -193,7 +188,7 @@ public class AuthManager {
 					source: .exchange(
 						code: code,
 						verifier: pckeCode.verifier,
-						redirectURI: redirectURI
+						redirectURI: redirectURI.absoluteString
 					)
 				)
 				.perform { [store] result in
@@ -230,6 +225,41 @@ public class AuthManager {
 	public func handle(_ url: URL) async throws -> AccessToken {
 		return try await withCheckedThrowingContinuation { continuation in
 			handle(url) { result in
+				continuation.resume(with: result)
+			}
+		}
+	}
+
+	// MARK: Refreshing an access token
+
+	public func refresh(_ accessToken: AccessToken, force: Bool = false, completion: @escaping (_ result: Result<AccessToken, Error>) -> Void) {
+		guard force || accessToken.hasExpired else {
+			return completion(.success(accessToken))
+		}
+
+		AccessTokenRequest(
+			appKey: appKey,
+			source: .refresh(token: accessToken)
+		)
+		.perform { [store] result in
+			if case .success(let token) = result {
+				do {
+					try store.save(token)
+				}
+				catch {
+					completion(.failure(error))
+
+					return
+				}
+			}
+
+			completion(result)
+		}
+	}
+
+	public func refresh(_ accessToken: AccessToken, force: Bool = false) async throws -> AccessToken {
+		return try await withCheckedThrowingContinuation { continuation in
+			refresh(accessToken, force: force) { result in
 				continuation.resume(with: result)
 			}
 		}

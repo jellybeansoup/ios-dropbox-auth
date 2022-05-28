@@ -29,7 +29,7 @@ public struct AccessToken: Codable {
 	/// The access token string.
 	public var accessToken: String
 
-	public var expiresIn: TimeInterval
+	public var expiryDate: Date
 
 	public let scope: String?
 
@@ -40,13 +40,18 @@ public struct AccessToken: Codable {
 	public let refreshToken: String
 
 	/// Create an instance of the receiver with the access token and uid.
-	public init(accessToken: String, expiresIn: TimeInterval, scope: String?, accountID: String, teamID: String?, refreshToken: String) {
+	public init(accessToken: String, expiryDate: Date, scope: String?, accountID: String, teamID: String?, refreshToken: String) {
 		self.accessToken = accessToken
-		self.expiresIn = expiresIn
+		self.expiryDate = expiryDate
 		self.scope = scope
 		self.accountID = accountID
 		self.teamID = teamID
 		self.refreshToken = refreshToken
+	}
+
+	/// Flag that indicates whether the token should be considered to have expired.
+	public var hasExpired: Bool {
+		return expiryDate.timeIntervalSinceNow < 30
 	}
 
 	// MARK: Signing URL requests
@@ -88,10 +93,14 @@ public struct AccessToken: Codable {
 		))
 	}
 
-	// MARK: Refreshing an access token
+	// MARK: Refreshing the token
 
-	public mutating func refresh() {
+	public func refresh(using authManager: AuthManager, force: Bool = false, completion: @escaping (_ result: Result<AccessToken, Error>) -> Void) {
+		authManager.refresh(self, force: force, completion: completion)
+	}
 
+	public func refreshed(using authManager: AuthManager, force: Bool = false) async throws -> AccessToken {
+		return try await authManager.refresh(self, force: force)
 	}
 
 }

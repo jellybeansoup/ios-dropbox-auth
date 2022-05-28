@@ -27,9 +27,11 @@ import DropboxAuthSwift
 
 struct AccountView: View {
 
-	let accessToken: AccessToken
+	@Environment(\.authManager) private static var authManager
 
 	@State var string: String = "Loading account details…"
+
+	let accessToken: AccessToken
 
 	var body: some View {
 		Text(string)
@@ -61,6 +63,15 @@ struct AccountView: View {
 	private func loadAccountDetails() {
 		Task {
 			let url = URL(string: "https://api.dropboxapi.com/2/users/get_current_account")!
+
+			let accessToken: AccessToken
+			do {
+				accessToken = try await self.accessToken.refreshed(using: AccountView.authManager, force: true)
+			}
+			catch {
+				print("Refreshing access token failed: \(error)")
+				accessToken = self.accessToken
+			}
 
 			var request = accessToken.signedRequest(with: url)
 			request.httpMethod = "POST"

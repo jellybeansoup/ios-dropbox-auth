@@ -23,7 +23,7 @@
 //
 
 import SwiftUI
-import DropboxAuthSwift
+import DropboxAuth
 
 struct ContentView: View {
 

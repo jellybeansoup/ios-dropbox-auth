@@ -22,13 +22,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A16A49492843332200B99A2F /* ios-dropbox-auth */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "ios-dropbox-auth"; path = ../..; sourceTree = "<group>"; };
 		A1CAF00E283893FF00242B47 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 		A1CAF00F283893FF00242B47 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1CAF0102838940000242B47 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1CAF0152838940000242B47 /* DropboxAuthExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DropboxAuthExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1CAF01B2838940000242B47 /* DropboxAuthExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DropboxAuthExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1CAF01D2838940000242B47 /* macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = macOS.entitlements; sourceTree = "<group>"; };
-		A1CAF0502838994A00242B47 /* ios-dropbox-auth */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "ios-dropbox-auth"; path = ..; sourceTree = "<group>"; };
 		A1CAF0522838E2D400242B47 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1CAF0532838ED1900242B47 /* iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iOS.entitlements; sourceTree = "<group>"; };
 		A1CAF054283934B700242B47 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
@@ -69,7 +69,7 @@
 				A1CAF00D283893FF00242B47 /* Shared */,
 				A1311A38283D9DDE0054410A /* iOS */,
 				A1CAF01C2838940000242B47 /* macOS */,
-				A1CAF0502838994A00242B47 /* ios-dropbox-auth */,
+				A16A49492843332200B99A2F /* ios-dropbox-auth */,
 				A1CAF0162838940000242B47 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -165,7 +165,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A1CAF00C283893FF00242B47 /* Build configuration list for PBXProject "DropboxAuthExample" */;
+			buildConfigurationList = A1CAF00C283893FF00242B47 /* Build configuration list for PBXProject "Example" */;
 			compatibilityVersion = "Xcode 13.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -465,7 +465,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A1CAF00C283893FF00242B47 /* Build configuration list for PBXProject "DropboxAuthExample" */ = {
+		A1CAF00C283893FF00242B47 /* Build configuration list for PBXProject "Example" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A1CAF03C2838940000242B47 /* Debug */,

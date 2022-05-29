@@ -5,21 +5,15 @@ let package = Package(
     name: "DropboxAuth",
 	platforms: [.iOS("13.0")],
     products: [
-        .library(name: "DropboxAuth", targets: ["DropboxAuthSwift"])
+		.library(name: "DropboxAuth", targets: ["DropboxAuth"])
     ],
     targets: [
 		.target(
-			name: "DropboxAuth",
-			dependencies: [],
-			//sources: ["DropboxAuth.h"],
-			publicHeadersPath: "."
-		),
-		.target(
-			name: "DropboxAuthSwift"
+			name: "DropboxAuth"
 		),
 		.testTarget(
 			name: "DropboxAuthTests",
-			dependencies: ["DropboxAuthSwift"]
+			dependencies: ["DropboxAuth"]
 		)
     ]
 )

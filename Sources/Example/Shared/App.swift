@@ -22,16 +22,16 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-import UIKit
+import SwiftUI
 import DropboxAuth
 
-class ViewController: UIViewController {
+@main
+struct App: SwiftUI.App {
 
-	@IBOutlet var connectButton: UIButton!
-
-	@IBOutlet var accountView: UIView!
-
-	@IBOutlet var connectButton: UIButton!
-
+	var body: some Scene {
+        WindowGroup {
+			ContentView()
+        }
+    }
 
 }

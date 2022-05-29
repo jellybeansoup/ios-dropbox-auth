@@ -1,5 +1,5 @@
 //
-// Copyright © 2019 Daniel Farrelly
+// Copyright © 2022 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -22,24 +22,24 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-@import Foundation;
+import SwiftUI
+import DropboxAuth
 
-NS_ASSUME_NONNULL_BEGIN
+struct AuthManagerKey: EnvironmentKey {
 
-@interface JDBKeychainManager : NSObject
+	typealias Value = AuthManager
 
-+ (BOOL)setValue:(NSString *)value forKey:(NSString *)key;
+	static var defaultValue = AuthManager(
+		key: "d25u9w2pgql046o"
+	)
 
-+ (NSString * _Nullable)valueForKey:(NSString *)key;
+}
 
-+ (BOOL)removeValueForKey:(NSString *)key;
+extension EnvironmentValues {
 
-+ (NSArray<NSString *> *)getAll;
+	var authManager: AuthManager {
+		get { return self[AuthManagerKey.self] }
+		set { self[AuthManagerKey.self] = newValue }
+	}
 
-+ (BOOL)clearAll;
-
-+ (void)jsm_listAllItems;
-
-@end
-
-NS_ASSUME_NONNULL_END
+}

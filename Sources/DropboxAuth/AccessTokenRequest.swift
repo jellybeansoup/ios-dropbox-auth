@@ -27,26 +27,31 @@ import Combine
 
 class AccessTokenRequest {
 
-	/// The application's consumer key.
-	/// Found in the Dropbox developer console: <https://www.dropbox.com/developers/apps>
-	let appKey: String
-
 	/// Value that indicates the type of token request being made.
 	let source: Source
+
+	let store: AccessTokenStore?
 
 	enum Source {
 
 		/// Request that exchanges a code returned from Dropbox via a callback URL for an access token.
-		case exchange(code: String, verifier: String, redirectURI: String)
+		case exchange(appKey: String, code: String, verifier: String, redirectURI: String)
 
 		/// Request that uses the long-lived `refreshToken` to refresh the short-lived `accessToken`.
 		case refresh(token: AccessToken)
 
+		var appKey: String? {
+			switch self {
+			case .exchange(let appKey, _, _, _): return appKey
+			case .refresh(let token): return token.appKey
+			}
+		}
+
 	}
 
-	init(appKey: String, source: Source) {
-		self.appKey = appKey
+	init(source: Source, store: AccessTokenStore?) {
 		self.source = source
+		self.store = store
 	}
 
 	// MARK: Requesting a token
@@ -100,8 +105,18 @@ class AccessTokenRequest {
 					self.dataSubscription = nil
 					self.retainSelf = nil
 				},
-				receiveValue: { token in
-					completion(.success(token))
+				receiveValue: { [source, store] token in
+					var token = token
+					token.appKey = source.appKey
+					token.store = store
+
+					do {
+						try store?.save(token)
+						completion(.success(token))
+					}
+					catch {
+						completion(.failure(error))
+					}
 
 					self.dataSubscription = nil
 					self.retainSelf = nil
@@ -172,7 +187,7 @@ class AccessTokenRequest {
 		var multipart = Data()
 
 		switch source {
-		case .exchange(let code, let verifier, let redirectURI):
+		case .exchange(let appKey, let code, let verifier, let redirectURI):
 			appendMultipart(to: &multipart, value: code, name: .code)
 			appendMultipart(to: &multipart, value: verifier, name: .codeVerifier)
 			appendMultipart(to: &multipart, value: redirectURI, name: .redirectURI)
@@ -181,8 +196,11 @@ class AccessTokenRequest {
 
 		case .refresh(let token):
 			appendMultipart(to: &multipart, value: token.refreshToken, name: .refreshToken)
-			appendMultipart(to: &multipart, value: appKey, name: .clientID)
 			appendMultipart(to: &multipart, value: "refresh_token", name: .grantType)
+
+			if let appKey = token.appKey {
+				appendMultipart(to: &multipart, value: appKey, name: .clientID)
+			}
 		}
 
 		finalizeMultipart(&multipart)

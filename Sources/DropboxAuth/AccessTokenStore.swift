@@ -33,9 +33,12 @@ protocol KeychainProtocol {
 
 public class AccessTokenStore {
 
+	let appKey: String
+
 	let keychain: KeychainProtocol
 
-	init(keychain: KeychainProtocol = Keychain()) {
+	init(appKey: String, keychain: KeychainProtocol = Keychain()) {
+		self.appKey = appKey
 		self.keychain = keychain
 	}
 
@@ -149,7 +152,10 @@ public class AccessTokenStore {
 			throw OSStatusError.missing
 		}
 
-		return try PropertyListDecoder().decode(AccessToken.self, from: result)
+		var token = try PropertyListDecoder().decode(AccessToken.self, from: result)
+		token.appKey = appKey
+		token.store = self
+		return token
 	}
 
 	/// Add a specific access token

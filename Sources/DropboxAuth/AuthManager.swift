@@ -54,14 +54,14 @@ public class AuthManager {
 		self.init(
 			key: key,
 			redirectURI: redirectURI,
-			store: .init()
+			store: .init(appKey: key)
 		)
 	}
 
 	internal init(
 		key: String,
 		redirectURI: URL? = nil,
-		store: AccessTokenStore = .init()
+		store: AccessTokenStore
 	) {
 		self.appKey = key
 		self.redirectURI = redirectURI ?? URL(string: "db-\(appKey)://2/token")!
@@ -184,12 +184,13 @@ public class AuthManager {
 
 			if let code = parameters?["code"] {
 				AccessTokenRequest(
-					appKey: appKey,
 					source: .exchange(
+						appKey: appKey,
 						code: code,
 						verifier: pckeCode.verifier,
 						redirectURI: redirectURI.absoluteString
-					)
+					),
+					store: store
 				)
 				.perform { [store] result in
 					if case .success(let token) = result {
@@ -233,36 +234,17 @@ public class AuthManager {
 	// MARK: Refreshing an access token
 
 	public func refresh(_ accessToken: AccessToken, force: Bool = false, completion: @escaping (_ result: Result<AccessToken, Error>) -> Void) {
-		guard force || accessToken.hasExpired else {
-			return completion(.success(accessToken))
-		}
-
-		AccessTokenRequest(
-			appKey: appKey,
-			source: .refresh(token: accessToken)
-		)
-		.perform { [store] result in
-			if case .success(let token) = result {
-				do {
-					try store.save(token)
-				}
-				catch {
-					completion(.failure(error))
-
-					return
-				}
-			}
-
-			completion(result)
-		}
+		var accessToken = accessToken
+		accessToken.appKey = appKey
+		accessToken.store = store
+		accessToken.refresh(force: force, completion: completion)
 	}
 
 	public func refresh(_ accessToken: AccessToken, force: Bool = false) async throws -> AccessToken {
-		return try await withCheckedThrowingContinuation { continuation in
-			refresh(accessToken, force: force) { result in
-				continuation.resume(with: result)
-			}
-		}
+		var accessToken = accessToken
+		accessToken.appKey = appKey
+		accessToken.store = store
+		return try await accessToken.refreshed(force: force)
 	}
 
 }

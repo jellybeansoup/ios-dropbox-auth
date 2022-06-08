@@ -39,8 +39,12 @@ public struct AccessToken: Codable {
 
 	public let refreshToken: String
 
+	internal var appKey: String?
+
+	internal var store: AccessTokenStore?
+
 	/// Create an instance of the receiver with the access token and uid.
-	public init(accessToken: String, expiryDate: Date, scope: String?, accountID: String, teamID: String?, refreshToken: String) {
+	init(accessToken: String, expiryDate: Date, scope: String?, accountID: String, teamID: String?, refreshToken: String) {
 		self.accessToken = accessToken
 		self.expiryDate = expiryDate
 		self.scope = scope
@@ -95,12 +99,55 @@ public struct AccessToken: Codable {
 
 	// MARK: Refreshing the token
 
-	public func refresh(using authManager: AuthManager, force: Bool = false, completion: @escaping (_ result: Result<AccessToken, Error>) -> Void) {
-		authManager.refresh(self, force: force, completion: completion)
+	public func refresh(force: Bool = false, completion: @escaping (_ result: Result<AccessToken, Error>) -> Void) {
+		guard force || hasExpired else {
+			return completion(.success(self))
+		}
+
+		AccessTokenRequest(
+			source: .refresh(token: self),
+			store: store
+		)
+		.perform(completion: completion)
 	}
 
-	public func refreshed(using authManager: AuthManager, force: Bool = false) async throws -> AccessToken {
-		return try await authManager.refresh(self, force: force)
+	public func refreshed(force: Bool = false) async throws -> AccessToken {
+		return try await withCheckedThrowingContinuation { continuation in
+			refresh(force: force) { result in
+				continuation.resume(with: result)
+			}
+		}
+	}
+
+	// MARK: Codable
+
+	private enum CodingKeys: CodingKey {
+		case accessToken
+		case expiryDate
+		case scope
+		case accountID
+		case teamID
+		case refreshToken
+	}
+
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		accessToken = try container.decode(String.self, forKey: .accessToken)
+		expiryDate = try container.decode(Date.self, forKey: .expiryDate)
+		scope = try container.decodeIfPresent(String.self, forKey: .scope)
+		accountID = try container.decode(String.self, forKey: .accountID)
+		teamID = try container.decodeIfPresent(String.self, forKey: .teamID)
+		refreshToken = try container.decode(String.self, forKey: .refreshToken)
+	}
+
+	public func encode(to encoder: Encoder) throws {
+		var container = encoder.container(keyedBy: CodingKeys.self)
+		try container.encode(accessToken, forKey: .accessToken)
+		try container.encode(expiryDate, forKey: .expiryDate)
+		try container.encodeIfPresent(scope, forKey: .scope)
+		try container.encode(accountID, forKey: .accountID)
+		try container.encodeIfPresent(teamID, forKey: .teamID)
+		try container.encode(refreshToken, forKey: .refreshToken)
 	}
 
 }

@@ -66,7 +66,7 @@ struct AccountView: View {
 
 			let accessToken: AccessToken
 			do {
-				accessToken = try await self.accessToken.refreshed(using: AccountView.authManager, force: true)
+				accessToken = try await self.accessToken.refreshed(force: true)
 			}
 			catch {
 				print("Refreshing access token failed: \(error)")

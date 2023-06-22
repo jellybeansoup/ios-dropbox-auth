@@ -27,8 +27,6 @@ import DropboxAuth
 
 struct AccountView: View {
 
-	@Environment(\.authManager) private static var authManager
-
 	@State var string: String = "Loading account details…"
 
 	let accessToken: AccessToken

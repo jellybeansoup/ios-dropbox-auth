@@ -31,7 +31,7 @@ class WebAuthenticationSession: NSObject {
 
 	private let windowProviderContainer: WindowProviderContainer?
 
-	init(authManager: AuthManager, windowProvider: (@MainActor () -> AuthManager.Window)?, completion: ((Result<AccessToken, Swift.Error>) -> Void)?) {
+	init(authManager: AuthManager, windowProvider: (() -> AuthManager.Window)?, completion: ((Result<AccessToken, Swift.Error>) -> Void)?) {
 		assert(Bundle.main.hasConfiguredScheme("db-\(authManager.appKey)"))
 
 		self.session = ASWebAuthenticationSession(
@@ -64,9 +64,9 @@ class WebAuthenticationSession: NSObject {
 
 	fileprivate class WindowProviderContainer: NSObject {
 
-		let windowProvider: @MainActor () -> AuthManager.Window
+		let windowProvider: () -> AuthManager.Window
 
-		init(windowProvider: @escaping @MainActor () -> AuthManager.Window) {
+		init(windowProvider: @escaping () -> AuthManager.Window) {
 			self.windowProvider = windowProvider
 		}
 

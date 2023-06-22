@@ -74,7 +74,7 @@ public class AuthManager {
 
 	/// Method used as a default for providing the window from which to present the in-app authentication flow.
 	/// - Returns: The first window in the first scene found to be in the `.foregroundActive` state.
-	@MainActor public static func defaultWindowProvider() -> Window {
+	public static func defaultWindowProvider() -> Window {
 		guard
 			let application = UIApplication.value(forKey: "sharedApplication") as? UIApplication,
 			let scene = application.connectedScenes.compactMap({ $0 as? UIWindowScene }).first(where: { $0.activationState == .foregroundActive }),
@@ -119,7 +119,7 @@ public class AuthManager {
 	///   		present the authentication prompt.
 	///   - completion: Optional closure that is called with the result of the authentication.
 	public func authenticateLocally(
-		from windowProvider: @escaping @MainActor () -> Window = AuthManager.defaultWindowProvider,
+		from windowProvider: @escaping () -> Window = AuthManager.defaultWindowProvider,
 		completion: ((Result<AccessToken, Error>) -> Void)? = nil
 	) {
 		do {
@@ -149,7 +149,7 @@ public class AuthManager {
 	///   	present the authentication prompt.
 	/// - Returns: The access token returned by Dropbox, if the authentication was successful.
 	public func authenticateLocally(
-		from windowProvider: @escaping @MainActor () -> Window = AuthManager.defaultWindowProvider
+		from windowProvider: @escaping () -> Window = AuthManager.defaultWindowProvider
 	) async throws -> AccessToken {
 		try await withCheckedThrowingContinuation { continuation in
 			authenticateLocally(from: windowProvider) { result in

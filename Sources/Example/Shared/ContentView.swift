@@ -27,7 +27,9 @@ import DropboxAuth
 
 struct ContentView: View {
 
-	@Environment(\.authManager) private static var authManager
+	private static var authManager = AuthManager(
+		key: "d25u9w2pgql046o"
+	)
 
 	@State private var accessToken: AccessToken? = ContentView.authManager.store.first
 

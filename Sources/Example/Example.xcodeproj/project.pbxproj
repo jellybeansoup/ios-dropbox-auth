@@ -17,8 +17,6 @@
 		A1CAF04F2838947800242B47 /* DropboxAuth in Frameworks */ = {isa = PBXBuildFile; productRef = A1CAF04E2838947800242B47 /* DropboxAuth */; };
 		A1CAF055283934B700242B47 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CAF054283934B700242B47 /* AccountView.swift */; };
 		A1CAF056283934B700242B47 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CAF054283934B700242B47 /* AccountView.swift */; };
-		A1CAF0582839360E00242B47 /* AuthManagerEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CAF0572839360E00242B47 /* AuthManagerEnvironment.swift */; };
-		A1CAF0592839360E00242B47 /* AuthManagerEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CAF0572839360E00242B47 /* AuthManagerEnvironment.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,7 +30,6 @@
 		A1CAF0522838E2D400242B47 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1CAF0532838ED1900242B47 /* iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iOS.entitlements; sourceTree = "<group>"; };
 		A1CAF054283934B700242B47 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
-		A1CAF0572839360E00242B47 /* AuthManagerEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManagerEnvironment.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,7 +77,6 @@
 				A1CAF00E283893FF00242B47 /* App.swift */,
 				A1CAF00F283893FF00242B47 /* ContentView.swift */,
 				A1CAF054283934B700242B47 /* AccountView.swift */,
-				A1CAF0572839360E00242B47 /* AuthManagerEnvironment.swift */,
 				A1CAF0102838940000242B47 /* Assets.xcassets */,
 				A1CAF0522838E2D400242B47 /* Info.plist */,
 			);
@@ -212,7 +208,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1CAF055283934B700242B47 /* AccountView.swift in Sources */,
-				A1CAF0582839360E00242B47 /* AuthManagerEnvironment.swift in Sources */,
 				A1CAF0382838940000242B47 /* ContentView.swift in Sources */,
 				A1CAF0362838940000242B47 /* App.swift in Sources */,
 			);
@@ -223,7 +218,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1CAF056283934B700242B47 /* AccountView.swift in Sources */,
-				A1CAF0592839360E00242B47 /* AuthManagerEnvironment.swift in Sources */,
 				A1CAF0392838940000242B47 /* ContentView.swift in Sources */,
 				A1CAF0372838940000242B47 /* App.swift in Sources */,
 			);

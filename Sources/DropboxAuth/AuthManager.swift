@@ -170,7 +170,7 @@ public class AuthManager {
 	/// 	provided `urlHandler`).
 	@discardableResult
 	@MainActor public func authenticateInBrowser(
-		urlHandler: @MainActor (_ url: URL) -> Bool = AuthManager.defaultURLHandler
+		urlHandler: @MainActor (_ url: URL) -> Bool = { AuthManager.defaultURLHandler($0) }
 	) -> Bool {
 		return urlHandler(URL.authenticationURL(for: self)!)
 	}

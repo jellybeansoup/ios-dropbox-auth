@@ -25,70 +25,99 @@
 import Foundation
 import AuthenticationServices
 
+@MainActor
 class WebAuthenticationSession: NSObject {
 
+	/// A typealias for the completion handler used in the authentication flow.
+	typealias CompletionHandler = @MainActor @Sendable (Result<AccessToken, Swift.Error>) -> Void
+
+	/// The underlying authentication session.
 	private let session: ASWebAuthenticationSession
 
-	private let windowProviderContainer: WindowProviderContainer?
+	/// Container for the window provider, which acts as the context provider for the `session`.
+	private let windowProviderContainer: WindowProviderContainer
 
-	init(authManager: AuthManager, windowProvider: (() -> AuthManager.Window)?, completion: ((Result<AccessToken, Swift.Error>) -> Void)?) {
+	/// Initializes a new web authentication session.
+	/// - Important: Before using this class, ensure that the appropriate custom URL scheme has been configured in the app's Info.plist file.
+	/// - Parameters:
+	///   - authManager: An instance of the ``AuthManager`` this session acts on behalf of.
+	///   - windowProvider: A closure providing a window for presenting the authentication session UI.
+	///   - completion: A closure to be called upon completion of the authentication flow, providing the result of the authentication attempt.
+	init(
+		authManager: AuthManager,
+		windowProvider: @escaping AuthManager.WindowProvider,
+		completion: @escaping CompletionHandler
+	) {
 		assert(Bundle.main.hasConfiguredScheme("db-\(authManager.appKey)"))
 
 		self.session = ASWebAuthenticationSession(
-			url: URL.authenticationURL(for: authManager)!,
+			url: authManager.authenticationURL!,
 			callbackURLScheme: "db-\(authManager.appKey)",
 			completionHandler: { [weak authManager, completion] url, error in
 				do {
-					if let error = error {
+					if let error {
 						throw error
 					}
-					else if let url = url, let authManager = authManager {
-						authManager.handle(url, completion: completion ?? { _ in })
+					else {
+						guard let authManager else {
+							throw Error.missingAuthManager
+						}
+
+						guard let url else {
+							throw Error.missingURL
+						}
+
+						authManager.handle(url, completion: completion)
 					}
 				}
 				catch {
-					completion?(.failure(error))
+					completion(.failure(error))
 				}
 			}
 		)
 
-		if #available(iOS 13.0, *), let windowProvider = windowProvider {
-			let container = WindowProviderContainer(windowProvider: windowProvider)
-			session.presentationContextProvider = container
-			self.windowProviderContainer = container
-		}
-		else {
-			self.windowProviderContainer = nil
-		}
+		self.windowProviderContainer = WindowProviderContainer(windowProvider: windowProvider)
+		session.presentationContextProvider = windowProviderContainer
 	}
 
-	fileprivate class WindowProviderContainer: NSObject {
-
-		let windowProvider: () -> AuthManager.Window
-
-		init(windowProvider: @escaping () -> AuthManager.Window) {
-			self.windowProvider = windowProvider
-		}
-
-	}
-
-	private enum Error: Swift.Error {
-		case unableToStart
-	}
-
+	/// Starts the web authentication session.
+	/// - Throws: An error if the session cannot be started.
 	func start() throws {
-		if !session.start() {
+		if session.start() == false {
 			throw Error.unableToStart
 		}
 	}
 
+	private enum Error: Swift.Error {
+		case missingAuthManager
+		case missingURL
+		case unableToStart
+	}
 }
 
-@available(iOS 13.0, *)
-extension WebAuthenticationSession.WindowProviderContainer: ASWebAuthenticationPresentationContextProviding {
+private class WindowProviderContainer: NSObject, ASWebAuthenticationPresentationContextProviding {
 
+	/// The window provider closure.
+	let windowProvider: AuthManager.WindowProvider
+
+	/// Initializes a new window provider container.
+	/// - Parameter windowProvider: A closure providing the window to present the authentication session UI.
+	init(windowProvider: @escaping AuthManager.WindowProvider) {
+		self.windowProvider = windowProvider
+	}
+
+	/// Provides the anchor window for presenting the authentication session UI.
+	/// - Parameter session: The ``ASWebAuthenticationSession`` instance.
 	func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-		return DispatchQueue.main.sync { windowProvider() }
+		if #available(iOS 17.0, *) {
+			return MainActor.assumeIsolated(windowProvider)
+		}
+		else {
+			dispatchPrecondition(condition: .onQueue(.main))
+			return withoutActuallyEscaping(windowProvider) { fn in
+				unsafeBitCast(fn, to: (() -> AuthManager.Window).self)()
+			}
+		}
 	}
 
 }

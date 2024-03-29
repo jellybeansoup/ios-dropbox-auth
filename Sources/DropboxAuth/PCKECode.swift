@@ -25,7 +25,7 @@
 import Foundation
 import CryptoKit
 
-struct PCKECode {
+struct PCKECode: Hashable, Sendable {
 
 	var method = "S256"
 

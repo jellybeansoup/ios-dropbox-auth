@@ -1,5 +1,5 @@
 //
-// Copyright © 2022 Daniel Farrelly
+// Copyright © 2024 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -24,47 +24,64 @@
 
 import Foundation
 
-protocol KeychainProtocol {
-	func copyMatching(_ query: CFDictionary, _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus
-	func update(_ query: CFDictionary, _ attributesToUpdate: CFDictionary) -> OSStatus
-	func add(_ attributes: CFDictionary, _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus
-	func delete(_ query: CFDictionary) -> OSStatus
-}
+public final class AccessTokenStore: Sendable {
 
-public class AccessTokenStore {
+	typealias CopyMatchingHandler = @Sendable (
+		_ query: CFDictionary,
+		_ result: UnsafeMutablePointer<CFTypeRef?>?
+	) -> OSStatus
+
+	typealias UpdateHandler = @Sendable (
+		_ query: CFDictionary,
+		_ attributesToUpdate: CFDictionary
+	) -> OSStatus
+
+	typealias AddHandler = @Sendable (
+		_ attributes: CFDictionary,
+		_ result: UnsafeMutablePointer<CFTypeRef?>?
+	) -> OSStatus
+
+	typealias DeleteHandler = @Sendable (
+		_ query: CFDictionary
+	) -> OSStatus
 
 	let appKey: String
 
-	let keychain: KeychainProtocol
+	let copyMatching: CopyMatchingHandler
 
-	init(appKey: String, keychain: KeychainProtocol = Keychain()) {
+	let update: UpdateHandler
+
+	let add: AddHandler
+
+	let delete: DeleteHandler
+
+	init(
+		appKey: String,
+		copyMatching: @escaping CopyMatchingHandler,
+		update: @escaping UpdateHandler,
+		add: @escaping AddHandler,
+		delete: @escaping DeleteHandler
+	) {
 		self.appKey = appKey
-		self.keychain = keychain
+		self.copyMatching = copyMatching
+		self.update = update
+		self.add = add
+		self.delete = delete
 	}
 
-	private struct Keychain: KeychainProtocol {
-
-		init() {}
-
-		func copyMatching(_ query: CFDictionary, _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus {
-			SecItemCopyMatching(query, result)
-		}
-
-		func update(_ query: CFDictionary, _ attributesToUpdate: CFDictionary) -> OSStatus {
-			SecItemUpdate(query, attributesToUpdate)
-		}
-
-		func add(_ attributes: CFDictionary, _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus {
-			SecItemAdd(attributes, result)
-		}
-
-		func delete(_ query: CFDictionary) -> OSStatus {
-			SecItemDelete(query)
-		}
-
+	convenience init(
+		appKey: String
+	) {
+		self.init(
+			appKey: appKey,
+			copyMatching: { SecItemCopyMatching($0, $1) },
+			update: { SecItemUpdate($0, $1) },
+			add: { SecItemAdd($0, $1) },
+			delete: { SecItemDelete($0) }
+		)
 	}
 
-	private struct OSStatusError: Swift.Error, LocalizedError {
+	struct OSStatusError: Swift.Error, LocalizedError, Sendable {
 
 		var status: OSStatus
 
@@ -85,10 +102,10 @@ public class AccessTokenStore {
 		])
 
 		var result: CFTypeRef?
-		let status = keychain.copyMatching(query, &result)
+		let status = copyMatching(query, &result)
 
 		guard status == noErr, let result = result as? NSArray else {
-			return false
+			return true
 		}
 
 		return result.count == 0
@@ -102,7 +119,7 @@ public class AccessTokenStore {
 		])
 
 		var result: CFTypeRef?
-		let status = keychain.copyMatching(query, &result)
+		let status = copyMatching(query, &result)
 
 		guard status == noErr, let result = result as? NSArray else {
 			return []
@@ -122,7 +139,7 @@ public class AccessTokenStore {
 		])
 
 		var result: CFTypeRef?
-		let status = keychain.copyMatching(query, &result)
+		let status = copyMatching(query, &result)
 
 		guard status == noErr, let result = result as? NSDictionary, let accountID = result[kSecAttrAccount] as? String else {
 			return nil
@@ -142,7 +159,7 @@ public class AccessTokenStore {
 		])
 
 		var result: CFTypeRef?
-		let status = keychain.copyMatching(query, &result)
+		let status = copyMatching(query, &result)
 
 		guard status == noErr else {
 			throw OSStatusError(status: status)
@@ -154,7 +171,6 @@ public class AccessTokenStore {
 
 		var token = try PropertyListDecoder().decode(AccessToken.self, from: result)
 		token.appKey = appKey
-		token.store = self
 		return token
 	}
 
@@ -169,17 +185,22 @@ public class AccessTokenStore {
 			kSecAttrAccount: NSString(string: accessToken.accountID) as CFString,
 		])
 
-		let status: OSStatus
-		if keychain.copyMatching(query as CFDictionary, nil) == noErr {
-			status = keychain.update(query, NSDictionary(dictionary: [kSecValueData: cfData]) as CFDictionary)
-		}
-		else {
+		let saveStatus: OSStatus
+		let lookupStatus = copyMatching(query as CFDictionary, nil)
+		switch lookupStatus {
+		case OSStatusError.missing.status:
 			query.setValue(cfData, forKey: kSecValueData as String)
-			status = keychain.add(query, nil)
+			saveStatus = add(query, nil)
+
+		case noErr:
+			saveStatus = update(query, NSDictionary(dictionary: [kSecValueData: cfData]) as CFDictionary)
+
+		default:
+			throw OSStatusError(status: lookupStatus)
 		}
 
-		if status != noErr {
-			throw OSStatusError(status: status)
+		if saveStatus != noErr {
+			throw OSStatusError(status: saveStatus)
 		}
 	}
 
@@ -191,7 +212,7 @@ public class AccessTokenStore {
 			kSecAttrAccount: NSString(string: accessToken.accountID) as CFString,
 		])
 
-		let status = keychain.delete(query)
+		let status = delete(query)
 
 		if status != noErr {
 			throw OSStatusError(status: status)
@@ -203,7 +224,7 @@ public class AccessTokenStore {
 	public func removeAll() throws {
 		let query = query(with: [:])
 
-		let status = keychain.delete(query)
+		let status = delete(query)
 
 		if status != noErr {
 			throw OSStatusError(status: status)

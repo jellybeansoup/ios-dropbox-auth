@@ -1,4 +1,4 @@
-// swift-tools-version:5.1
+// swift-tools-version:5.9
 import PackageDescription
 
 let package = Package(
@@ -9,11 +9,17 @@ let package = Package(
     ],
     targets: [
 		.target(
-			name: "DropboxAuth"
+			name: "DropboxAuth",
+			swiftSettings: [
+				.enableExperimentalFeature("StrictConcurrency")
+			]
 		),
 		.testTarget(
 			name: "DropboxAuthTests",
-			dependencies: ["DropboxAuth"]
+			dependencies: ["DropboxAuth"],
+			swiftSettings: [
+				.enableExperimentalFeature("StrictConcurrency")
+			]
 		)
     ]
 )

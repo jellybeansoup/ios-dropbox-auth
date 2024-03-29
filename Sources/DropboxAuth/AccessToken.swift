@@ -24,7 +24,7 @@
 
 import Foundation
 
-public struct AccessToken: Codable {
+public struct AccessToken: Codable, Hashable, Sendable {
 
 	/// The access token string.
 	public var accessToken: String
@@ -41,10 +41,15 @@ public struct AccessToken: Codable {
 
 	internal var appKey: String?
 
-	internal var store: AccessTokenStore?
-
 	/// Create an instance of the receiver with the access token and uid.
-	init(accessToken: String, expiryDate: Date, scope: String?, accountID: String, teamID: String?, refreshToken: String) {
+	init(
+		accessToken: String,
+		expiryDate: Date,
+		scope: String?,
+		accountID: String,
+		teamID: String?,
+		refreshToken: String
+	) {
 		self.accessToken = accessToken
 		self.expiryDate = expiryDate
 		self.scope = scope
@@ -95,28 +100,6 @@ public struct AccessToken: Codable {
 		return signedRequest(from: URLRequest(
 			url: url
 		))
-	}
-
-	// MARK: Refreshing the token
-
-	public func refresh(force: Bool = false, completion: @escaping (_ result: Result<AccessToken, Error>) -> Void) {
-		guard force || hasExpired else {
-			return completion(.success(self))
-		}
-
-		AccessTokenRequest(
-			source: .refresh(token: self),
-			store: store
-		)
-		.perform(completion: completion)
-	}
-
-	public func refreshed(force: Bool = false) async throws -> AccessToken {
-		return try await withCheckedThrowingContinuation { continuation in
-			refresh(force: force) { result in
-				continuation.resume(with: result)
-			}
-		}
 	}
 
 	// MARK: Codable

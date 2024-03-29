@@ -27,51 +27,54 @@ import DropboxAuth
 
 struct AccountView: View {
 
-	@State var string: String = "Loading account details…"
+	class ViewModel: ObservableObject {
 
-	let accessToken: AccessToken
+		private enum Response: Decodable {
+			case account(email: String)
+			case error(summary: String)
 
-	var body: some View {
-		Text(string)
-			.onAppear(perform: loadAccountDetails)
-	}
+			enum CodingKeys: String, CodingKey {
+				case email
+				case errorSummary = "error_summary"
+			}
 
-	enum Response: Decodable {
-		case account(email: String)
-		case error(summary: String)
+			init(from decoder: Decoder) throws {
+				let container = try decoder.container(keyedBy: CodingKeys.self)
 
-		enum CodingKeys: String, CodingKey {
-			case email
-			case errorSummary = "error_summary"
+				do {
+					self = .account(email: try container.decode(String.self, forKey: .email))
+				}
+				catch {
+					self = .error(summary: try container.decode(String.self, forKey: .errorSummary))
+				}
+			}
+
 		}
 
-		init(from decoder: Decoder) throws {
-			let container = try decoder.container(keyedBy: CodingKeys.self)
+		private let authManager: AuthManager
 
-			do {
-				self = .account(email: try container.decode(String.self, forKey: .email))
-			}
-			catch {
-				self = .error(summary: try container.decode(String.self, forKey: .errorSummary))
-			}
+		private var accessToken: AccessToken
+
+		@Published var string: String = "Loading account details…"
+
+		init(accessToken: AccessToken) {
+			self.authManager = AuthManager(key: "d25u9w2pgql046o")
+			self.accessToken = accessToken
 		}
 
-	}
-
-	private func loadAccountDetails() {
-		Task {
+		func loadAccountDetails() async {
 			let url = URL(string: "https://api.dropboxapi.com/2/users/get_current_account")!
 
-			let accessToken: AccessToken
+			let refreshedToken: AccessToken
 			do {
-				accessToken = try await self.accessToken.refreshed(force: true)
+				refreshedToken = try await authManager.refresh(accessToken, force: true)
 			}
 			catch {
 				print("Refreshing access token failed: \(error)")
-				accessToken = self.accessToken
+				refreshedToken = accessToken
 			}
 
-			var request = accessToken.signedRequest(with: url)
+			var request = refreshedToken.signedRequest(with: url)
 			request.httpMethod = "POST"
 
 			do {
@@ -80,16 +83,39 @@ struct AccountView: View {
 
 				switch response {
 				case .account(let email):
-					string = email
+					await update(with: email)
 
 				case .error(let summary):
-					string = "Failed to load account details: \(summary)"
+					await update(with: "Failed to load account details: \(summary)")
 				}
 			}
 			catch {
-				string = "Failed to load account details: \(error)"
+				await update(with: "Failed to load account details: \(error)")
 			}
 		}
+
+		@MainActor
+		private func update(with string: String) {
+			self.string = string
+		}
+
+	}
+
+	@ObservedObject private var viewModel: ViewModel
+
+	@State private var onAppearTask: Task<Void, Never>?
+
+	init(accessToken: AccessToken) {
+		self.viewModel = ViewModel(accessToken: accessToken)
+	}
+
+	var body: some View {
+		Text(viewModel.string)
+			.onAppear {
+				onAppearTask = Task {
+					await viewModel.loadAccountDetails()
+				}
+			}
 	}
 
 }

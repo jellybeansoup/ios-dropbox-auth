@@ -27,59 +27,82 @@ import DropboxAuth
 
 struct ContentView: View {
 
-	private static var authManager = AuthManager(
-		key: "d25u9w2pgql046o"
-	)
+	class ViewModel: ObservableObject {
 
-	@State private var accessToken: AccessToken? = ContentView.authManager.store.first
+		private let authManager: AuthManager
 
-	@State private var isShowingAuthView = false
+		@Published var accessToken: AccessToken?
 
-	var body: some View {
-		if let accessToken = accessToken {
-			VStack(spacing: 10) {
-				AccountView(accessToken: accessToken)
-					.multilineTextAlignment(.center)
-
-				Button("Disconnect", action: disconnect)
-			}
-			.scenePadding()
+		init() {
+			self.authManager = AuthManager(key: "d25u9w2pgql046o")
+			self.accessToken = authManager.store.first
 		}
-		else {
-			Button("Connect to Dropbox", action: connect)
-				.onOpenURL { url in
-					Task {
-						accessToken = try? await ContentView.authManager.handle(url)
-					}
-				}
-		}
-    }
 
-	private func connect() {
-		Task {
+		@MainActor
+		func connect() async {
 			#if targetEnvironment(macCatalyst) || os(macOS)
 			// Authenticate in the user's preferred browser on macOS.
-			await ContentView.authManager.authenticateInBrowser()
+			authManager.authenticateInBrowser()
 			#else
 			// Authenticate locally on iOS and iPadOS.
 			do {
-				accessToken = try await ContentView.authManager.authenticateLocally()
+				accessToken = try await authManager.authenticateLocally()
 			}
 			catch {
 				print(error)
 			}
 			#endif
 		}
-	}
 
-	private func disconnect() {
-		do {
-			try ContentView.authManager.store.removeAll()
-
-			accessToken = nil
+		@MainActor
+		func handle(_ redirectURI: URL) async {
+			accessToken = try? await authManager.handle(redirectURI)
 		}
-		catch {}
+
+		func disconnect() {
+			do {
+				try authManager.store.removeAll()
+
+				accessToken = nil
+			}
+			catch {}
+		}
+
 	}
+
+	@ObservedObject private var viewModel = ViewModel()
+
+	@State private var isShowingAuthView = false
+
+	@State private var connectTask: Task<Void, Never>?
+
+	@State private var openURLTask: Task<Void, Never>?
+
+	var body: some View {
+		if let accessToken = viewModel.accessToken {
+			VStack(spacing: 10) {
+				AccountView(accessToken: accessToken)
+					.multilineTextAlignment(.center)
+
+				Button("Disconnect") {
+					viewModel.disconnect()
+				}
+			}
+			.scenePadding()
+		}
+		else {
+			Button("Connect to Dropbox") {
+				connectTask = Task {
+					await viewModel.connect()
+				}
+			}
+			.onOpenURL { redirectURI in
+				openURLTask = Task {
+					await viewModel.handle(redirectURI)
+				}
+			}
+		}
+    }
 
 }
 

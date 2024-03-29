@@ -1,5 +1,5 @@
 //
-// Copyright © 2022 Daniel Farrelly
+// Copyright © 2024 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -23,19 +23,54 @@
 //
 
 import Foundation
-import CryptoKit
 
-extension SHA256Digest {
+struct RefreshRequest: TokenRequest, Sendable {
 
-	var hexEncodedString: String {
-		let alphabet = Array("0123456789abcdef".utf8)
-		let codeUnits: [UTF8.CodeUnit] = reduce(into: []) { partialResult, element in
-			let indices = Int(element).quotientAndRemainder(dividingBy: 0x10)
-			partialResult.append(alphabet[indices.quotient])
-			partialResult.append(alphabet[indices.remainder])
-		}
+	typealias Response = RefreshResponse
 
-		return String(decoding: codeUnits, as: UTF8.self)
+	static let url = URL(string: "https://api.dropbox.com/oauth2/token")!
+
+	static let method = Method.post
+
+	var token: AccessToken
+	let grantType = "refresh_token"
+
+	enum CodingKeys: String, CodingKey {
+		case refreshToken = "refresh_token"
+		case appKey = "client_id"
+		case grantType = "grant_type"
+	}
+
+	func encode(to encoder: MultipartEncoder) {
+		let container = encoder.container(keyedBy: CodingKeys.self)
+		container.encode(token.refreshToken, forKey: .refreshToken)
+		container.encode(grantType, forKey: .grantType)
+		container.encodeIfPresent(token.appKey, forKey: .appKey)
+	}
+
+}
+
+struct RefreshResponse: TokenResponse, Sendable {
+
+	typealias Request = RefreshRequest
+
+	let accessToken: String
+	let expiresIn: TimeInterval
+
+	enum CodingKeys: String, CodingKey {
+		case accessToken = "access_token"
+		case expiresIn = "expires_in"
+	}
+
+	func token(for originalRequest: Request) -> AccessToken {
+		.init(
+			accessToken: accessToken,
+			expiryDate: .init(timeIntervalSinceNow: expiresIn),
+			scope: originalRequest.token.scope,
+			accountID: originalRequest.token.accountID,
+			teamID: originalRequest.token.teamID,
+			refreshToken: originalRequest.token.refreshToken
+		)
 	}
 
 }

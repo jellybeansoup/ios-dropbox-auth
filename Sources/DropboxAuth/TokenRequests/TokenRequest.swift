@@ -1,5 +1,5 @@
 //
-// Copyright © 2022 Daniel Farrelly
+// Copyright © 2024 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -24,36 +24,52 @@
 
 import Foundation
 
-extension Bundle {
+enum Method: String {
+	case get = "GET"
+	case post = "POST"
+}
 
-	func hasConfiguredScheme(_ configuredScheme: String) -> Bool {
-		guard let urlTypes = object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] else {
-			return false
+protocol TokenRequest: MultipartEncodable {
+
+	associatedtype Response: TokenResponse where Response.Request == Self
+
+	static var url: URL { get }
+
+	static var method: Method { get }
+
+}
+
+protocol TokenResponse: Decodable {
+
+	associatedtype Request: TokenRequest where Request.Response == Self
+
+	func token(for originalRequest: Request) -> AccessToken
+
+}
+
+extension URLSession {
+
+	func token<Request: TokenRequest>(
+		with request: Request
+	) async throws -> AccessToken {
+		var urlRequest = URLRequest(url: Request.url)
+		urlRequest.httpMethod = Request.method.rawValue
+
+		let encoder = MultipartEncoder()
+		urlRequest.httpBody = encoder.encode(request)
+		urlRequest.addValue("multipart/form-data; charset=utf-8; boundary=\(encoder.boundary)", forHTTPHeaderField: "Content-Type")
+
+		let (data, _) = try await data(for: urlRequest)
+
+		let response: Request.Response
+		do {
+			response = try JSONDecoder().decode(Request.Response.self, from: data)
+		}
+		catch {
+			throw (try? JSONDecoder().decode(AuthError.self, from: data)) ?? error
 		}
 
-		for urlType in urlTypes {
-			guard let schemes = urlType["CFBundleURLSchemes"] as? [String] else {
-				continue
-			}
-
-			for scheme in schemes where scheme == configuredScheme {
-				return true
-			}
-		}
-
-		return false
-	}
-
-	var hasApplicationQueriesScheme: Bool {
-		guard let schemes = object(forInfoDictionaryKey: "LSApplicationQueriesSchemes") as? [String] else {
-			return false
-		}
-
-		for scheme in schemes where scheme == "dbapi-2" {
-			return true
-		}
-
-		return false
+		return response.token(for: request)
 	}
 
 }

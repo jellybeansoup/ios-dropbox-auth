@@ -1,5 +1,5 @@
 //
-// Copyright © 2022 Daniel Farrelly
+// Copyright © 2024 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -22,26 +22,31 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+@testable import DropboxAuth
 import Foundation
 
-extension URL {
+extension AccessToken {
 
-	static func authenticationURL(for authManager: AuthManager) -> URL? {
-		var components = URLComponents()
-		components.scheme = "https"
-		components.host = "www.dropbox.com"
-		components.path = "/oauth2/authorize"
-		components.queryItems = [
-			URLQueryItem(name: "response_type", value: "code"),
-			URLQueryItem(name: "code_challenge", value: authManager.pckeCode.challenge),
-			URLQueryItem(name: "code_challenge_method", value: "S256"),
-			URLQueryItem(name: "client_id", value: authManager.appKey),
-			URLQueryItem(name: "redirect_uri", value: authManager.redirectURI.absoluteString),
-			URLQueryItem(name: "token_access_type", value: "offline"),
-			URLQueryItem(name: "disable_signup", value: "true"),
-		]
-
-		return components.url
+	static func mock(
+		accessToken: String = "access_token",
+		expiryDate: Date = .init(timeIntervalSince1970: 1577869200), // 2020-01-01 09:00
+		scope: String? = nil,
+		accountID: String = "account_id",
+		teamID: String? = nil,
+		refreshToken: String = "refresh_token",
+		appKey: String = "app_key"
+	) -> Self {
+		var token = Self(
+			accessToken: accessToken,
+			expiryDate: expiryDate,
+			scope: scope,
+			accountID: accountID,
+			teamID: teamID,
+			refreshToken: refreshToken
+		)
+		token.appKey = appKey
+		return token
 	}
 
 }
+

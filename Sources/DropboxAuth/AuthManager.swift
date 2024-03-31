@@ -229,6 +229,30 @@ public final class AuthManager: Sendable {
 		return token
 	}
 
+	public func refresh(
+		_ accessToken: AccessToken,
+		force: Bool = false
+	) -> AnyPublisher<AccessToken, any Error> {
+		var accessToken = accessToken
+		accessToken.appKey = appKey
+
+		guard force || accessToken.hasExpired else {
+			return Just(accessToken)
+				.setFailureType(to: Error.self)
+				.eraseToAnyPublisher()
+		}
+
+		return URLSession.shared.token(
+			with: RefreshRequest(token: accessToken)
+		)
+		.tryMap { [store] accessToken in
+			try store.save(accessToken)
+
+			return accessToken
+		}
+		.eraseToAnyPublisher()
+	}
+
 }
 
 extension AuthManager {

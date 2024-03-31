@@ -22,6 +22,7 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+import Combine
 import Foundation
 
 enum Method: String {
@@ -47,29 +48,50 @@ protocol TokenResponse: Decodable {
 
 }
 
-extension URLSession {
+private extension TokenRequest {
 
-	func token<Request: TokenRequest>(
-		with request: Request
-	) async throws -> AccessToken {
-		var urlRequest = URLRequest(url: Request.url)
-		urlRequest.httpMethod = Request.method.rawValue
+	var urlRequest: URLRequest {
+		var urlRequest = URLRequest(url: Self.url)
+		urlRequest.httpMethod = Self.method.rawValue
 
 		let encoder = MultipartEncoder()
-		urlRequest.httpBody = encoder.encode(request)
+		urlRequest.httpBody = encoder.encode(self)
 		urlRequest.addValue("multipart/form-data; charset=utf-8; boundary=\(encoder.boundary)", forHTTPHeaderField: "Content-Type")
 
-		let (data, _) = try await data(for: urlRequest)
+		return urlRequest
+	}
 
-		let response: Request.Response
+	func token(from data: Data) throws -> AccessToken {
+		let response: Response
 		do {
-			response = try JSONDecoder().decode(Request.Response.self, from: data)
+			response = try JSONDecoder().decode(Response.self, from: data)
 		}
 		catch {
 			throw (try? JSONDecoder().decode(AuthError.self, from: data)) ?? error
 		}
 
-		return response.token(for: request)
+		return response.token(for: self)
+	}
+
+}
+
+extension URLSession {
+
+	func token<Request: TokenRequest>(
+		with request: Request
+	) async throws -> AccessToken {
+		let (data, _) = try await data(for: request.urlRequest)
+		return try request.token(from: data)
+	}
+
+	func token<Request: TokenRequest>(
+		with request: Request
+	) -> AnyPublisher<AccessToken, any Error> {
+		dataTaskPublisher(for: request.urlRequest)
+			.tryMap { data, _ in
+				try request.token(from: data)
+			}
+			.eraseToAnyPublisher()
 	}
 
 }

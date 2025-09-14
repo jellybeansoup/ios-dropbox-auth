@@ -1,5 +1,5 @@
 //
-// Copyright © 2022 Daniel Farrelly
+// Copyright © 2025 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -33,8 +33,15 @@ struct ContentView: View {
 
 		@Published var accessToken: AccessToken?
 
+		var connectTask: Task<Void, Never>?
+
+		var openURLTask: Task<Void, Never>?
+
 		init() {
-			self.authManager = AuthManager(key: "d25u9w2pgql046o")
+			self.authManager = AuthManager(
+				key: "5l6xntafcom4xc2",
+				redirectURI: URL(string: "dropbox-auth-example:///2/token")
+			)
 			self.accessToken = authManager.store.first
 		}
 
@@ -56,7 +63,12 @@ struct ContentView: View {
 
 		@MainActor
 		func handle(_ redirectURI: URL) async {
-			accessToken = try? await authManager.handle(redirectURI)
+			do {
+				accessToken = try await authManager.handle(redirectURI)
+			}
+			catch {
+				print(error)
+			}
 		}
 
 		func disconnect() {
@@ -74,10 +86,6 @@ struct ContentView: View {
 
 	@State private var isShowingAuthView = false
 
-	@State private var connectTask: Task<Void, Never>?
-
-	@State private var openURLTask: Task<Void, Never>?
-
 	var body: some View {
 		if let accessToken = viewModel.accessToken {
 			VStack(spacing: 10) {
@@ -92,12 +100,16 @@ struct ContentView: View {
 		}
 		else {
 			Button("Connect to Dropbox") {
-				connectTask = Task {
+				viewModel.connectTask = Task {
 					await viewModel.connect()
 				}
 			}
+			/// This is important on (non-Catalyst) macOS, as otherwise SwiftUI opens URLs in a new window.
+			/// <https://developer.apple.com/documentation/swiftui/view/handlesexternalevents(preferring:allowing:)>
+			.handlesExternalEvents(preferring: ["/2/token"], allowing: ["*"])
+			/// Handle the incoming `redirectURI` and exchange it for a token.
 			.onOpenURL { redirectURI in
-				openURLTask = Task {
+				viewModel.openURLTask = Task {
 					await viewModel.handle(redirectURI)
 				}
 			}

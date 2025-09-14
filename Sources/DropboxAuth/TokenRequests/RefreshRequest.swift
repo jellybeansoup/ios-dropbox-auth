@@ -1,5 +1,5 @@
 //
-// Copyright © 2024 Daniel Farrelly
+// Copyright © 2025 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -24,33 +24,26 @@
 
 import Foundation
 
-struct RefreshRequest: TokenRequest, Sendable {
+struct RefreshRequest: API.Request, Sendable {
 
 	typealias Response = RefreshResponse
+	typealias Error = OAuthError
 
-	static let url = URL(string: "https://api.dropbox.com/oauth2/token")!
+	static let endpoint: API.Endpoint = .oauth
 
-	static let method = Method.post
+	static let method = API.Method.post
 
-	var token: AccessToken
 	let grantType = "refresh_token"
+	var token: AccessToken
 
-	enum CodingKeys: String, CodingKey {
-		case refreshToken = "refresh_token"
-		case appKey = "client_id"
-		case grantType = "grant_type"
-	}
-
-	func encode(to encoder: MultipartEncoder) {
-		let container = encoder.container(keyedBy: CodingKeys.self)
-		container.encode(token.refreshToken, forKey: .refreshToken)
-		container.encode(grantType, forKey: .grantType)
-		container.encodeIfPresent(token.appKey, forKey: .appKey)
+	func configure(_ urlRequest: inout URLRequest) throws {
+		urlRequest.setValue("application/x-www-form-urlencoded; charset=utf-8", forHTTPHeaderField: "Content-Type")
+		urlRequest.httpBody = Data("client_id=\(token.appKey ?? "")&refresh_token=\(token.refreshToken)&grant_type=\(grantType)".utf8)
 	}
 
 }
 
-struct RefreshResponse: TokenResponse, Sendable {
+struct RefreshResponse: API.Response, TokenResponse, Sendable {
 
 	typealias Request = RefreshRequest
 

@@ -1,5 +1,5 @@
 //
-// Copyright © 2022 Daniel Farrelly
+// Copyright © 2025 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -27,11 +27,12 @@ import DropboxAuth
 
 struct AccountView: View {
 
+	@MainActor
 	class ViewModel: ObservableObject {
 
 		private enum Response: Decodable {
 			case account(email: String)
-			case error(summary: String)
+			case error(AuthenticationError)
 
 			enum CodingKeys: String, CodingKey {
 				case email
@@ -45,7 +46,9 @@ struct AccountView: View {
 					self = .account(email: try container.decode(String.self, forKey: .email))
 				}
 				catch {
-					self = .error(summary: try container.decode(String.self, forKey: .errorSummary))
+					let errorSummary = try container.decode(API.ErrorSummary.self, forKey: .errorSummary)
+					let error = try AuthenticationError(summary: errorSummary)
+					self = .error(error)
 				}
 			}
 
@@ -57,6 +60,8 @@ struct AccountView: View {
 
 		@Published var string: String = "Loading account details…"
 
+		var loadAccountTask: Task<Void, Never>?
+
 		init(accessToken: AccessToken) {
 			self.authManager = AuthManager(key: "d25u9w2pgql046o")
 			self.accessToken = accessToken
@@ -67,11 +72,12 @@ struct AccountView: View {
 
 			let refreshedToken: AccessToken
 			do {
-				refreshedToken = try await authManager.refresh(accessToken, force: true)
+				refreshedToken = try await authManager.refresh(accessToken)
 			}
 			catch {
-				print("Refreshing access token failed: \(error)")
-				refreshedToken = accessToken
+				update(with: "Refreshing access token failed: \(error.localizedDescription)")
+
+				return
 			}
 
 			var request = refreshedToken.signedRequest(with: url)
@@ -83,14 +89,14 @@ struct AccountView: View {
 
 				switch response {
 				case .account(let email):
-					await update(with: email)
+					update(with: email)
 
-				case .error(let summary):
-					await update(with: "Failed to load account details: \(summary)")
+				case .error(let error):
+					update(with: "Failed to load account details: \(error.localizedDescription)")
 				}
 			}
 			catch {
-				await update(with: "Failed to load account details: \(error)")
+				update(with: "Failed to decode account details: \(error.localizedDescription)")
 			}
 		}
 
@@ -103,8 +109,6 @@ struct AccountView: View {
 
 	@ObservedObject private var viewModel: ViewModel
 
-	@State private var onAppearTask: Task<Void, Never>?
-
 	init(accessToken: AccessToken) {
 		self.viewModel = ViewModel(accessToken: accessToken)
 	}
@@ -112,7 +116,7 @@ struct AccountView: View {
 	var body: some View {
 		Text(viewModel.string)
 			.onAppear {
-				onAppearTask = Task {
+				viewModel.loadAccountTask = Task {
 					await viewModel.loadAccountDetails()
 				}
 			}

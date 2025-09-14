@@ -1,5 +1,5 @@
 //
-// Copyright © 2024 Daniel Farrelly
+// Copyright © 2025 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -24,23 +24,51 @@
 
 import Foundation
 
+/**
+ `AccessTokenStore` securely manages the storage, retrieval, updating, and deletion of user access tokens (such as OAuth tokens) using the Keychain Services API. It is designed to handle tokens for different accounts, providing a simple and safe interface for reading and writing sensitive authentication data. The store can be initialized with custom Keychain handler functions for advanced use, but by default uses system Keychain operations. Thread-safe and suitable for use in app extensions and main apps alike.
+
+ - Usage: Use `save(_:)` to add or update tokens, `remove(_:)` or `removeAll()` to delete them, and `accessToken(for:)` to fetch tokens by account identifier. Check `isEmpty`, `accessTokens`, and `first` for store state and quick access.
+ - Important: This store is scoped to the app or app extension via a service key derived from the bundle identifier, and can be shared across app extensions as necessary.
+*/
 public final class AccessTokenStore: Sendable {
 
+	/// Handler for performing a Keychain query (such as searching for a matching item).
+	///
+	/// - Parameters:
+	///   - query: A `CFDictionary` describing the keychain query parameters.
+	///   - result: An optional pointer to receive the result if the query is successful (e.g., attributes or data).
+	/// - Returns: An OSStatus code indicating success or the nature of the failure.
 	typealias CopyMatchingHandler = @Sendable (
 		_ query: CFDictionary,
 		_ result: UnsafeMutablePointer<CFTypeRef?>?
 	) -> OSStatus
 
+	/// Handler for updating an existing Keychain item.
+	///
+	/// - Parameters:
+	///   - query: A `CFDictionary` specifying which item(s) to update.
+	///   - attributesToUpdate: A `CFDictionary` containing the attributes to update for the matching item(s).
+	/// - Returns: An OSStatus code indicating success or failure.
 	typealias UpdateHandler = @Sendable (
 		_ query: CFDictionary,
 		_ attributesToUpdate: CFDictionary
 	) -> OSStatus
 
+	/// Handler for adding a new item to the Keychain.
+	///
+	/// - Parameters:
+	///   - attributes: A `CFDictionary` with the attributes for the new keychain item, including data and metadata.
+	///   - result: An optional pointer to receive information about the added item.
+	/// - Returns: An OSStatus code indicating success or the reason for failure.
 	typealias AddHandler = @Sendable (
 		_ attributes: CFDictionary,
 		_ result: UnsafeMutablePointer<CFTypeRef?>?
 	) -> OSStatus
 
+	/// Handler for deleting a Keychain item.
+	///
+	/// - Parameter query: A `CFDictionary` describing the item(s) to delete from the keychain.
+	/// - Returns: An OSStatus code indicating whether the item(s) were deleted or why the operation failed.
 	typealias DeleteHandler = @Sendable (
 		_ query: CFDictionary
 	) -> OSStatus
@@ -55,6 +83,16 @@ public final class AccessTokenStore: Sendable {
 
 	let delete: DeleteHandler
 
+	/// Initializes an `AccessTokenStore` with custom Keychain operation handlers.
+	///
+	/// - Parameters:
+	///   - appKey: The application key to associate with stored tokens.
+	///   - copyMatching: Closure to perform the Keychain copy matching operation.
+	///   - update: Closure to perform the Keychain update operation.
+	///   - add: Closure to perform the Keychain add operation.
+	///   - delete: Closure to perform the Keychain delete operation.
+	///
+	/// This allows injection of custom Keychain handlers, useful for testing or specialized behaviors.
 	init(
 		appKey: String,
 		copyMatching: @escaping CopyMatchingHandler,
@@ -69,6 +107,11 @@ public final class AccessTokenStore: Sendable {
 		self.delete = delete
 	}
 
+	/// Initializes an `AccessTokenStore` using the default Keychain Services API functions.
+	///
+	/// - Parameter appKey: The application key to associate with stored tokens.
+	///
+	/// This convenience initializer sets up the store to use the system's Keychain functions.
 	convenience init(
 		appKey: String
 	) {
@@ -81,12 +124,13 @@ public final class AccessTokenStore: Sendable {
 		)
 	}
 
+	/// An error type representing an OSStatus code returned from Keychain operations.
 	struct OSStatusError: Swift.Error, LocalizedError, Sendable {
 
 		var status: OSStatus
 
-		var localizedDescription: String {
-			return String((SecCopyErrorMessageString(status, nil) as NSString?) ?? "unknown")
+		var errorDescription: String? {
+			return (SecCopyErrorMessageString(status, nil) as NSString?).map(String.init)
 		}
 
 		static let missing = OSStatusError(status: -25300)
@@ -96,6 +140,8 @@ public final class AccessTokenStore: Sendable {
 	// MARK: Storing access tokens
 
 	/// A Boolean value indicating whether the store is empty.
+	///
+	/// Returns `true` if no access tokens are present in the store, otherwise `false`.
 	public var isEmpty: Bool {
 		let query = self.query(with: [
 			kSecMatchLimit: kSecMatchLimitOne,
@@ -112,6 +158,9 @@ public final class AccessTokenStore: Sendable {
 	}
 
 	/// All stored access tokens.
+	///
+	/// Returns an array of all access tokens currently saved in the store.
+	/// If no tokens are found or an error occurs, returns an empty array.
 	public var accessTokens: [AccessToken] {
 		let query = self.query(with: [
 			kSecReturnAttributes: kCFBooleanTrue!,
@@ -132,6 +181,9 @@ public final class AccessTokenStore: Sendable {
 	}
 
 	/// The first access token found, if available.
+	///
+	/// Returns an optional `AccessToken` representing the first token in the store.
+	/// Returns `nil` if no tokens are found or an error occurs.
 	public var first: AccessToken? {
 		let query = self.query(with: [
 			kSecReturnAttributes: kCFBooleanTrue!,
@@ -148,9 +200,11 @@ public final class AccessTokenStore: Sendable {
 		return try? accessToken(for: accountID)
 	}
 
-	/// Retrieve the access token for a particular user identifier
-	/// - Parameter userID: The identifier representing the user whose token to retrieve.
-	/// - Returns: An access token if present, otherwise `nil`.
+	/// Retrieve the access token for a particular account identifier.
+	///
+	/// - Parameter accountID: The identifier representing the account whose token to retrieve.
+	/// - Throws: An `OSStatusError` if the token cannot be found or a Keychain error occurs.
+	/// - Returns: An `AccessToken` if present.
 	public func accessToken(for accountID: String) throws -> AccessToken {
 		let query = query(with: [
 			kSecAttrAccount: NSString(string: accountID) as CFString,
@@ -174,9 +228,12 @@ public final class AccessTokenStore: Sendable {
 		return token
 	}
 
-	/// Add a specific access token
-	/// - Parameter accessToken: The access token to add.
-	/// - Returns: Flag indicating whether the operation succeeded.
+	/// Add or update a specific access token in the store.
+	///
+	/// - Parameter accessToken: The access token to add or update.
+	/// - Throws: An `OSStatusError` if the save operation fails.
+	///
+	/// If the token for the given account already exists, it will be updated. Otherwise, it will be added.
 	internal func save(_ accessToken: AccessToken) throws {
 		let data = try PropertyListEncoder().encode(accessToken)
 		let cfData = NSData(data: data) as CFData
@@ -204,9 +261,10 @@ public final class AccessTokenStore: Sendable {
 		}
 	}
 
-	/// Delete a specific access token
+	/// Delete a specific access token from the store.
+	///
 	/// - Parameter accessToken: The access token to delete.
-	/// - Returns: Flag indicating whether the operation succeeded.
+	/// - Throws: An `OSStatusError` if the delete operation fails.
 	public func remove(_ accessToken: AccessToken) throws {
 		let query = query(with: [
 			kSecAttrAccount: NSString(string: accessToken.accountID) as CFString,
@@ -219,8 +277,9 @@ public final class AccessTokenStore: Sendable {
 		}
 	}
 
-	/// Delete all stored access tokens
-	/// - Returns: Flag indicating whether the operation succeeded.
+	/// Delete all stored access tokens from the store.
+	///
+	/// - Throws: An `OSStatusError` if the delete operation fails.
 	public func removeAll() throws {
 		let query = query(with: [:])
 
@@ -233,6 +292,12 @@ public final class AccessTokenStore: Sendable {
 
 	// MARK: Utilities
 
+	/// Constructs a base query dictionary for Keychain operations, scoped to the app or extension.
+	///
+	/// - Parameter dictionary: A dictionary of additional query parameters to include.
+	/// - Returns: A dictionary suitable for Keychain queries with service and class attributes set.
+	///
+	/// This method adjusts the bundle identifier for app extensions to correctly scope the Keychain service.
 	private func query(with dictionary: NSDictionary) -> NSDictionary {
 		var bundle: Bundle? = .main
 		if let bundleURL = bundle?.bundleURL, bundleURL.pathExtension == "appex" {

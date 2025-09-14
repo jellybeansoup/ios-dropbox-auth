@@ -1,5 +1,5 @@
 //
-// Copyright © 2022 Daniel Farrelly
+// Copyright © 2025 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -24,7 +24,7 @@
 
 import CryptoKit
 import Combine
-import UIKit
+import Foundation
 
 public final class AuthManager: Sendable {
 
@@ -39,7 +39,7 @@ public final class AuthManager: Sendable {
 	public let redirectURI: URL
 
 	/// A series of client-generated codes used to authenticate token requests.
-	internal let pckeCode = PCKECode()
+	let pckeCode = PCKECode()
 
 	/// Create an auth manager with the given app key.
 	/// - Parameters:
@@ -67,25 +67,6 @@ public final class AuthManager: Sendable {
 
 	// MARK: Defaults
 
-	public typealias Window = UIWindow
-
-	public typealias WindowProvider = @MainActor @Sendable () -> Window
-
-	/// Method used as a default for providing the window from which to present the in-app authentication flow.
-	/// - Returns: The first window in the first scene found to be in the `.foregroundActive` state.
-	@MainActor
-	public static func defaultWindowProvider() -> Window {
-		guard
-			let application = UIApplication.value(forKey: "sharedApplication") as? UIApplication,
-			let scene = application.connectedScenes.compactMap({ $0 as? UIWindowScene }).first(where: { $0.activationState == .foregroundActive }),
-			let window = scene.windows.first
-		else {
-			return UIWindow()
-		}
-
-		return window
-	}
-
 	var authenticationURL: URL? {
 		var components = URLComponents()
 		components.scheme = "https"
@@ -104,114 +85,12 @@ public final class AuthManager: Sendable {
 		return components.url
 	}
 
-	// MARK: Handling authorization in-app
-
-	/// Uses `ASWebAuthenticationSession` to authenticate without leaving the app.
-	///
-	/// On iOS and iPadOS, this presents a web browser window within the current scene. On macOS
-	/// (including with Catalyst), this presents a web browser in a new window.
-	/// - Note: Because the entire authentication flow occurs in-app, it is not necessary to call
-	/// 	`handle(_:)` at any at any stage when using this authentication option. By the time the
-	/// 	method returns the token will have been fully processed and stored in Keychain.
-	/// - Parameter windowProvider: Optional closure that returns the underlying window from which to
-	///   	present the authentication prompt.
-	/// - Returns: The access token returned by Dropbox, if the authentication was successful.
-	@MainActor
-	public func authenticateLocally(
-		from windowProvider: @escaping WindowProvider = { AuthManager.defaultWindowProvider() }
-	) async throws -> AccessToken {
-		try await withCheckedThrowingContinuation { continuation in
-			do {
-				var session: WebAuthenticationSession!
-				session = WebAuthenticationSession(
-					authManager: self,
-					windowProvider: windowProvider,
-					completion: {
-						continuation.resume(with: $0)
-						session = nil
-					}
-				)
-
-				try session.start()
-			}
-			catch {
-				continuation.resume(throwing: error)
-			}
-		}
-	}
-
-	// MARK: Handling authentication in browser
-
-	/// Hands off to the default web browser on the device to authenticate.
-	/// - Note: To receive the access token from this flow, you must call `handle(_:)` with the
-	/// 	response URL, which will be parsed to retrieve and then store the access token.
-	/// - Parameter urlHandler: Optional closure used to handle the generated URL.
-	/// - Returns: Flag to indicate if the URL was handled successfully (as returned from the
-	/// 	provided `urlHandler`).
-	@discardableResult
-	public func authenticateInBrowser(
-		urlHandler: @Sendable (_ url: URL) -> Bool
-	) -> Bool {
-		return urlHandler(authenticationURL!)
-	}
-
-	/// Hands off to the default web browser on the device to authenticate.
-	/// - Note: To receive the access token from this flow, you must call `handle(_:)` with the
-	/// 	response URL, which will be parsed to retrieve and then store the access token.
-	/// - Parameter urlHandler: Optional closure used to handle the generated URL.
-	/// - Returns: Flag to indicate if the URL was handled successfully (as returned from the
-	/// 	provided `urlHandler`).
-	@MainActor
-	@discardableResult
-	public func authenticateInBrowser() -> Bool {
-		guard
-			let application = UIApplication.value(forKey: "sharedApplication") as? UIApplication,
-			application.canOpenURL(authenticationURL!)
-		else {
-			return false
-		}
-
-		application.open(authenticationURL!, options: [:], completionHandler: nil)
-
-		return true
-	}
-
-	/// Try to handle a redirect back into the application
-	/// - Parameter url: The URL to attempt to handle.
-	/// - Returns: Returns the `AccessToken` if the redirect URL can be handled successfully.
-	@discardableResult
-	public func handle(
-		_ url: URL
-	) async throws -> AccessToken {
-		let parameters = url.query?.queryParameters
-
-		if let code = parameters?["code"] {
-			let token = try await URLSession.shared.token(
-				with: ExchangeRequest(
-					appKey: appKey,
-					code: code,
-					verifier: pckeCode.verifier,
-					redirectURI: redirectURI.absoluteString
-				)
-			)
-
-			try store.save(token)
-
-			return token
-		}
-		else if let error = parameters?["error"] {
-			throw AuthError(string: error)
-		}
-		else {
-			throw AuthError.unknown
-		}
-	}
-
 	// MARK: Refreshing an access token
 
 	public func refresh(
 		_ accessToken: AccessToken,
-		force: Bool = false
+		force: Bool = false,
+		urlSession: URLSession = .shared
 	) async throws -> AccessToken {
 		var accessToken = accessToken
 		accessToken.appKey = appKey
@@ -220,7 +99,7 @@ public final class AuthManager: Sendable {
 			return accessToken
 		}
 
-		let token = try await URLSession.shared.token(
+		let token = try await urlSession.token(
 			with: RefreshRequest(token: accessToken)
 		)
 
@@ -231,7 +110,8 @@ public final class AuthManager: Sendable {
 
 	public func refresh(
 		_ accessToken: AccessToken,
-		force: Bool = false
+		force: Bool = false,
+		urlSession: URLSession = .shared
 	) -> AnyPublisher<AccessToken, any Error> {
 		var accessToken = accessToken
 		accessToken.appKey = appKey
@@ -242,7 +122,7 @@ public final class AuthManager: Sendable {
 				.eraseToAnyPublisher()
 		}
 
-		return URLSession.shared.token(
+		return urlSession.token(
 			with: RefreshRequest(token: accessToken)
 		)
 		.tryMap { [store] accessToken in
@@ -256,50 +136,6 @@ public final class AuthManager: Sendable {
 }
 
 extension AuthManager {
-
-	/// Uses `ASWebAuthenticationSession` to authenticate without leaving the app.
-	///
-	/// On iOS and iPadOS, this presents a web browser window within the current scene. On macOS
-	/// (including with Catalyst), this presents a web browser in a new window.
-	/// - Note: Because the entire authentication flow occurs in-app, it is not necessary to call
-	/// 	`handle(_:)` at any stage when using this authentication option. By the time the completion
-	/// 	handler is called, the token will have been fully processed and stored in Keychain.
-	/// - Parameters:
-	///   - windowProvider: Optional closure that returns the underlying window from which to
-	///   		present the authentication prompt.
-	///   - completion: Optional closure that is called with the result of the authentication.
-	public func authenticateLocally(
-		from windowProvider: @escaping WindowProvider = { AuthManager.defaultWindowProvider() },
-		completion: (@MainActor @Sendable (Result<AccessToken, Error>) -> Void)? = nil
-	) {
-		Task {
-			do {
-				let token = try await authenticateLocally(from: windowProvider)
-				await completion?(.success(token))
-			}
-			catch {
-				await completion?(.failure(error))
-			}
-		}
-	}
-
-	/// Try to handle a redirect back into the application
-	/// - Parameter url: The URL to attempt to handle.
-	/// - Returns: Returns the `AccessToken` if the redirect URL can be handled successfully.
-	public func handle(
-		_ url: URL,
-		completion: @escaping @MainActor @Sendable (_ result: Result<AccessToken, Error>) -> ()
-	) {
-		Task {
-			do {
-				let token = try await handle(url)
-				await completion(.success(token))
-			}
-			catch {
-				await completion(.failure(error))
-			}
-		}
-	}
 
 	public func refresh(
 		_ accessToken: AccessToken,

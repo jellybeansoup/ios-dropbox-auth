@@ -1,5 +1,5 @@
 //
-// Copyright © 2024 Daniel Farrelly
+// Copyright © 2025 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -25,72 +25,28 @@
 import Combine
 import Foundation
 
-enum Method: String {
-	case get = "GET"
-	case post = "POST"
-}
-
-protocol TokenRequest: MultipartEncodable {
-
-	associatedtype Response: TokenResponse where Response.Request == Self
-
-	static var url: URL { get }
-
-	static var method: Method { get }
-
-}
-
-protocol TokenResponse: Decodable {
-
-	associatedtype Request: TokenRequest where Request.Response == Self
+protocol TokenResponse: API.Response {
 
 	func token(for originalRequest: Request) -> AccessToken
 
 }
 
-private extension TokenRequest {
-
-	var urlRequest: URLRequest {
-		var urlRequest = URLRequest(url: Self.url)
-		urlRequest.httpMethod = Self.method.rawValue
-
-		let encoder = MultipartEncoder()
-		urlRequest.httpBody = encoder.encode(self)
-		urlRequest.addValue("multipart/form-data; charset=utf-8; boundary=\(encoder.boundary)", forHTTPHeaderField: "Content-Type")
-
-		return urlRequest
-	}
-
-	func token(from data: Data) throws -> AccessToken {
-		let response: Response
-		do {
-			response = try JSONDecoder().decode(Response.self, from: data)
-		}
-		catch {
-			throw (try? JSONDecoder().decode(AuthError.self, from: data)) ?? error
-		}
-
-		return response.token(for: self)
-	}
-
-}
-
 extension URLSession {
 
-	func token<Request: TokenRequest>(
+	func token<Request: API.Request>(
 		with request: Request
-	) async throws -> AccessToken {
+	) async throws -> AccessToken where Request.Response: TokenResponse {
 		let (data, _) = try await data(for: request.urlRequest)
-		return try request.token(from: data)
+		return try request.response(from: data).token(for: request)
 	}
 
-	func token<Request: TokenRequest>(
+	func token<Request: API.Request>(
 		with request: Request
-	) -> AnyPublisher<AccessToken, any Error> {
-		dataTaskPublisher(for: request.urlRequest)
-			.tryMap { data, _ in
-				try request.token(from: data)
-			}
+	) -> AnyPublisher<AccessToken, any Error> where Request.Response: TokenResponse {
+		Just(request)
+			.tryMap { try $0.urlRequest }
+			.flatMap { self.dataTaskPublisher(for: $0).mapError { $0 as any Error } }
+			.tryMap { try request.response(from: $0.data).token(for: request) }
 			.eraseToAnyPublisher()
 	}
 

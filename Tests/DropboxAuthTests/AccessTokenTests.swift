@@ -1,5 +1,5 @@
 //
-// Copyright © 2024 Daniel Farrelly
+// Copyright © 2025 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -23,80 +23,77 @@
 //
 
 @testable import DropboxAuth
-import XCTest
+import DropboxAuthMocks
+import Foundation
+import Testing
 
-final class AccessTokenTests: XCTestCase {
+@Suite struct AccessTokenTests {
 
-	func testHasExpired() {
-		XCTAssertTrue(AccessToken.mock(
+	@Test func hasExpired() async throws {
+		#expect(AccessToken.mock(
 			expiryDate: Date(timeIntervalSinceNow: -100)
 		).hasExpired)
 
-		XCTAssertTrue(AccessToken.mock(
+		#expect(AccessToken.mock(
 			expiryDate: Date(timeIntervalSinceNow: 10)
 		).hasExpired)
 
-		XCTAssertFalse(AccessToken.mock(
+		#expect(AccessToken.mock(
 			expiryDate: Date(timeIntervalSinceNow: 100)
-		).hasExpired)
+		).hasExpired == false)
 	}
 
-	func testSignedRequestFromRequest() {
-		let accessToken = AccessToken.mock(
-			accessToken: "access_token"
-		)
-
+	@Test func signedRequestFromRequest() async throws {
+		let url = try #require(URL(string: "https://example.com"))
 		var request = URLRequest(
-			url: URL(string: "https://example.com")!
+			url: url
 		)
 		request.httpMethod = "POST"
 		request.httpBody = Data([0,0,0,0,0,0])
 		request.addValue("application/json", forHTTPHeaderField: "Content-Type")
 
+		let accessToken = AccessToken.mock(accessToken: "access_token")
 		let signedRequest = accessToken.signedRequest(from: request)
 
 		request.addValue("Bearer access_token", forHTTPHeaderField: "Authorization")
 
-		XCTAssertEqual(signedRequest, request)
+		#expect(signedRequest == request)
 	}
 
-	func testSignedRequestWithURLCachePolicyAndTimeoutInterval() {
+	@Test func signedRequestWithURLCachePolicyAndTimeoutInterval() async throws {
+		let url = try #require(URL(string: "https://example.com"))
 		let accessToken = AccessToken.mock(
 			accessToken: "access_token"
 		)
 
 		var request = URLRequest(
-			url: URL(string: "https://example.com")!,
+			url: url,
 			cachePolicy: .reloadIgnoringLocalAndRemoteCacheData,
 			timeoutInterval: 123.456
 		)
 		request.addValue("Bearer access_token", forHTTPHeaderField: "Authorization")
 
 		let signedRequest = accessToken.signedRequest(
-			with: URL(string: "https://example.com")!,
+			with: url,
 			cachePolicy: .reloadIgnoringLocalAndRemoteCacheData,
 			timeoutInterval: 123.456
 		)
 
-		XCTAssertEqual(signedRequest, request)
+		#expect(signedRequest == request)
 	}
 
-	func testSignedRequestWithURL() {
+	@Test func signedRequestWithURL() async throws {
+		let url = try #require(URL(string: "https://example.com"))
 		let accessToken = AccessToken.mock(
 			accessToken: "access_token"
 		)
 
-		var request = URLRequest(
-			url: URL(string: "https://example.com")!
-		)
+		var request = URLRequest(url: url)
 		request.addValue("Bearer access_token", forHTTPHeaderField: "Authorization")
 
-		let signedRequest = accessToken.signedRequest(
-			with: URL(string: "https://example.com")!
-		)
+		let signedRequest = accessToken.signedRequest(with: url)
 
-		XCTAssertEqual(signedRequest, request)
+		#expect(signedRequest == request)
 	}
-
 
 }

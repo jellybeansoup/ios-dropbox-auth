@@ -6,10 +6,10 @@
 	<array>
 		<dict>
 			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
+			<string>Viewer</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>db-d25u9w2pgql046o</string>
+				<string>dropbox-auth-example</string>
 			</array>
 		</dict>
 	</array>

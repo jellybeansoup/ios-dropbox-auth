@@ -1,5 +1,5 @@
 //
-// Copyright © 2022 Daniel Farrelly
+// Copyright © 2025 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -32,10 +32,10 @@ class WebAuthenticationSession: NSObject {
 	typealias CompletionHandler = @MainActor @Sendable (Result<AccessToken, Swift.Error>) -> Void
 
 	/// The underlying authentication session.
-	private let session: ASWebAuthenticationSession
+	let session: ASWebAuthenticationSession
 
 	/// Container for the window provider, which acts as the context provider for the `session`.
-	private let windowProviderContainer: WindowProviderContainer
+	let windowProviderContainer: WindowProviderContainer
 
 	/// Initializes a new web authentication session.
 	/// - Important: Before using this class, ensure that the appropriate custom URL scheme has been configured in the app's Info.plist file.
@@ -88,14 +88,14 @@ class WebAuthenticationSession: NSObject {
 		}
 	}
 
-	private enum Error: Swift.Error {
+	enum Error: Swift.Error {
 		case missingAuthManager
 		case missingURL
 		case unableToStart
 	}
 }
 
-private class WindowProviderContainer: NSObject, ASWebAuthenticationPresentationContextProviding {
+class WindowProviderContainer: NSObject, ASWebAuthenticationPresentationContextProviding {
 
 	/// The window provider closure.
 	let windowProvider: AuthManager.WindowProvider

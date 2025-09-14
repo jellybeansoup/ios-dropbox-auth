@@ -1,5 +1,5 @@
 //
-// Copyright © 2024 Daniel Farrelly
+// Copyright © 2025 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -23,67 +23,68 @@
 //
 
 @testable import DropboxAuth
-import XCTest
+import Foundation
+import Testing
 
-final class BundleTests: XCTestCase {
+@Suite struct BundleTests {
 
-	func testHasConfiguredSchemeWithConfiguredScheme() {
+	@Test func hasConfiguredSchemeWithConfiguredScheme() {
 		let bundle = MockBundle()
 		bundle.urlTypes = [["CFBundleURLSchemes": ["db-test"]]]
 
 		let hasConfiguredScheme = bundle.hasConfiguredScheme("db-test")
 
-		XCTAssertTrue(hasConfiguredScheme)
+		#expect(hasConfiguredScheme)
 	}
 
-	func testHasConfiguredSchemeWithUnconfiguredScheme() {
+	@Test func hasConfiguredSchemeWithUnconfiguredScheme() {
 		let bundle = MockBundle()
 		bundle.urlTypes = []
 
 		let hasConfiguredScheme = bundle.hasConfiguredScheme("db-test")
 
-		XCTAssertFalse(hasConfiguredScheme)
+		#expect(hasConfiguredScheme == false)
 	}
 
-	func testHasConfiguredSchemeWithDifferentScheme() {
+	@Test func hasConfiguredSchemeWithDifferentScheme() {
 		let bundle = MockBundle()
 		bundle.urlTypes = [["CFBundleURLSchemes": ["other-scheme"]]]
 
 		let hasConfiguredScheme = bundle.hasConfiguredScheme("db-test")
 
-		XCTAssertFalse(hasConfiguredScheme)
+		#expect(hasConfiguredScheme == false)
 	}
 
-	func testHasApplicationQueriesSchemeWithConfiguredScheme() {
+	@Test func hasApplicationQueriesSchemeWithConfiguredScheme() {
 		let bundle = MockBundle()
 		bundle.applicationQueriesSchemes = ["dbapi-2"]
 
 		let hasApplicationQueriesScheme = bundle.hasApplicationQueriesScheme
 
-		XCTAssertTrue(hasApplicationQueriesScheme)
+		#expect(hasApplicationQueriesScheme)
 	}
 
-	func testHasApplicationQueriesSchemeWithUnconfiguredScheme() {
+	@Test func hasApplicationQueriesSchemeWithUnconfiguredScheme() {
 		let bundle = MockBundle()
 		bundle.applicationQueriesSchemes = []
 
 		let hasApplicationQueriesScheme = bundle.hasApplicationQueriesScheme
 
-		XCTAssertFalse(hasApplicationQueriesScheme)
+		#expect(hasApplicationQueriesScheme == false)
 	}
 
-	func testHasApplicationQueriesSchemeWithDifferentScheme() {
+	@Test func hasApplicationQueriesSchemeWithDifferentScheme() {
 		let bundle = MockBundle()
 		bundle.applicationQueriesSchemes = ["other-scheme"]
 
 		let hasApplicationQueriesScheme = bundle.hasApplicationQueriesScheme
 
-		XCTAssertFalse(hasApplicationQueriesScheme)
+		#expect(hasApplicationQueriesScheme == false)
 	}
 
 }
 
-class MockBundle: Bundle {
+class MockBundle: Bundle, @unchecked Sendable {
 
 	var urlTypes: [[String: Any]]?
 
@@ -98,4 +99,5 @@ class MockBundle: Bundle {
 			return super.object(forInfoDictionaryKey: key)
 		}
 	}
+
 }

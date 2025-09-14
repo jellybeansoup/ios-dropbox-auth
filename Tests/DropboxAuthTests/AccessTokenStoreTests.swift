@@ -1,5 +1,5 @@
 //
-// Copyright © 2024 Daniel Farrelly
+// Copyright © 2025 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -23,94 +23,96 @@
 //
 
 @testable import DropboxAuth
-import XCTest
+import DropboxAuthMocks
+import Foundation
+import Testing
 
-final class AccessTokenStoreTests: XCTestCase {
+@Suite struct AccessTokenStoreTests {
 
 	// MARK: AccessTokenStore.isEmpty
 
-	func testIsEmpty() {
+	@Test func isEmpty() async throws {
 		let store = AccessTokenStore.mock(
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecMatchLimit: kSecMatchLimitOne,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				result?.pointee = CFArray.withTokens("token")
 				return noErr
 			}
 		)
 
-		XCTAssertFalse(store.isEmpty)
+		#expect(store.isEmpty == false)
 	}
 
-	func testIsEmptyWhenEmpty() {
+	@Test func isEmptyWhenEmpty() async throws {
 		let store = AccessTokenStore.mock(
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecMatchLimit: kSecMatchLimitOne,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				result?.pointee = CFArray.empty
 				return noErr
 			}
 		)
 
-		XCTAssertTrue(store.isEmpty)
+		#expect(store.isEmpty == true)
 	}
 
-	func testIsEmptyWhenQueryThrowsError() {
+	@Test func isEmptyWhenQueryThrowsError() async throws {
 		let store = AccessTokenStore.mock(
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecMatchLimit: kSecMatchLimitOne,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				return 12345
 			}
 		)
 
-		XCTAssertTrue(store.isEmpty)
+		#expect(store.isEmpty == true)
 	}
 
 	// MARK: AccessTokenStore.accessTokens
 
-	func testAccessTokens() {
+	@Test func accessTokens() async throws {
 		let appKey = "app_key"
 		let token = "token"
 		let store = AccessTokenStore.mock(
 			appKey: appKey,
 			copyMatching: { query, result in
 				if let returnData = (query as NSDictionary)[kSecReturnData], (returnData as! CFBoolean) == kCFBooleanTrue  {
-					XCTAssertEqual(query, [
+					#expect(query == [
 						kSecClass: kSecClassGenericPassword,
 						kSecAttrAccount: token,
 						kSecReturnData: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitOne,
 						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 					] as CFDictionary)
-					XCTAssertNil(result?.pointee)
+					#expect(result?.pointee == nil)
 
-					result?.pointee = try! CFData.mock(accessToken: token, appKey: appKey)
+					result?.pointee = CFData.mock(accessToken: token, appKey: appKey)
 					return noErr
 				}
 				else {
-					XCTAssertEqual(query, [
+					#expect(query == [
 						kSecClass: kSecClassGenericPassword,
 						kSecReturnAttributes: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitAll,
 						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 					] as CFDictionary)
-					XCTAssertNil(result?.pointee)
+					#expect(result?.pointee == nil)
 
 					result?.pointee = CFArray.withTokens(token)
 					return noErr
@@ -118,72 +120,72 @@ final class AccessTokenStoreTests: XCTestCase {
 			}
 		)
 
-		XCTAssertEqual(store.accessTokens, [.mock(accessToken: token, appKey: appKey)])
+		#expect(store.accessTokens == [.mock(accessToken: token, appKey: appKey)])
 	}
 
-	func testAccessTokensWhenEmpty() {
+	@Test func accessTokensWhenEmpty() async throws {
 		let store = AccessTokenStore.mock(
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecReturnAttributes: kCFBooleanTrue!,
 					kSecMatchLimit: kSecMatchLimitAll,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				result?.pointee = CFArray.empty
 				return noErr
 			}
 		)
 
-		XCTAssertEqual(store.accessTokens, [])
+		#expect(store.accessTokens == [])
 	}
 
-	func testAccessTokensWhenAttributesQueryThrowsError() {
+	@Test func accessTokensWhenAttributesQueryThrowsError() async throws {
 		let store = AccessTokenStore.mock(
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecReturnAttributes: kCFBooleanTrue!,
 					kSecMatchLimit: kSecMatchLimitAll,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				return 12345
 			}
 		)
 
-		XCTAssertEqual(store.accessTokens, [])
+		#expect(store.accessTokens == [])
 	}
 
-	func testAccessTokensWhenDataQueryThrowsError() {
+	@Test func accessTokensWhenDataQueryThrowsError() async throws {
 		let appKey = "app_key"
 		let token = "token"
 		let store = AccessTokenStore.mock(
 			appKey: appKey,
 			copyMatching: { query, result in
 				if let returnData = (query as NSDictionary)[kSecReturnData], (returnData as! CFBoolean) == kCFBooleanTrue  {
-					XCTAssertEqual(query, [
+					#expect(query == [
 						kSecClass: kSecClassGenericPassword,
 						kSecAttrAccount: token,
 						kSecReturnData: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitOne,
 						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 					] as CFDictionary)
-					XCTAssertNil(result?.pointee)
+					#expect(result?.pointee == nil)
 
 					return 12345
 				}
 				else {
-					XCTAssertEqual(query, [
+					#expect(query == [
 						kSecClass: kSecClassGenericPassword,
 						kSecReturnAttributes: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitAll,
 						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 					] as CFDictionary)
-					XCTAssertNil(result?.pointee)
+					#expect(result?.pointee == nil)
 
 					result?.pointee = CFArray.withTokens(token)
 					return noErr
@@ -191,38 +193,38 @@ final class AccessTokenStoreTests: XCTestCase {
 			}
 		)
 
-		XCTAssertEqual(store.accessTokens, [])
+		#expect(store.accessTokens == [])
 	}
 
 	// MARK: AccessTokenStore.first
 
-	func testFirst() {
+	@Test func first() async throws {
 		let appKey = "app_key"
 		let token = "token"
 		let store = AccessTokenStore.mock(
 			appKey: appKey,
 			copyMatching: { query, result in
 				if let returnData = (query as NSDictionary)[kSecReturnData], (returnData as! CFBoolean) == kCFBooleanTrue  {
-					XCTAssertEqual(query, [
+					#expect(query == [
 						kSecClass: kSecClassGenericPassword,
 						kSecAttrAccount: token,
 						kSecReturnData: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitOne,
 						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 					] as CFDictionary)
-					XCTAssertNil(result?.pointee)
+					#expect(result?.pointee == nil)
 
-					result?.pointee = try! CFData.mock(accessToken: token, appKey: appKey)
+					result?.pointee = CFData.mock(accessToken: token, appKey: appKey)
 					return noErr
 				}
 				else {
-					XCTAssertEqual(query, [
+					#expect(query == [
 						kSecClass: kSecClassGenericPassword,
 						kSecReturnAttributes: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitOne,
 						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 					] as CFDictionary)
-					XCTAssertNil(result?.pointee)
+					#expect(result?.pointee == nil)
 
 					result?.pointee = CFDictionary.withToken(token)
 					return noErr
@@ -230,72 +232,72 @@ final class AccessTokenStoreTests: XCTestCase {
 			}
 		)
 
-		XCTAssertEqual(store.first, .mock(accessToken: token, appKey: appKey))
+		#expect(store.first == .mock(accessToken: token, appKey: appKey))
 	}
 
-	func testFirstWhenEmpty() {
+	@Test func firstWhenEmpty() async throws {
 		let store = AccessTokenStore.mock(
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecReturnAttributes: kCFBooleanTrue!,
 					kSecMatchLimit: kSecMatchLimitOne,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				result?.pointee = CFArray.empty
 				return noErr
 			}
 		)
 
-		XCTAssertNil(store.first)
+		#expect(store.first == nil)
 	}
 
-	func testFirstWhenAttributesQueryThrowsError() {
+	@Test func firstWhenAttributesQueryThrowsError() async throws {
 		let store = AccessTokenStore.mock(
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecReturnAttributes: kCFBooleanTrue!,
 					kSecMatchLimit: kSecMatchLimitOne,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				return 12345
 			}
 		)
 
-		XCTAssertNil(store.first)
+		#expect(store.first == nil)
 	}
 
-	func testFirstWhenDataQueryThrowsError() {
+	@Test func firstWhenDataQueryThrowsError() async throws {
 		let appKey = "app_key"
 		let token = "token"
 		let store = AccessTokenStore.mock(
 			appKey: appKey,
 			copyMatching: { query, result in
 				if let returnData = (query as NSDictionary)[kSecReturnData], (returnData as! CFBoolean) == kCFBooleanTrue  {
-					XCTAssertEqual(query, [
+					#expect(query == [
 						kSecClass: kSecClassGenericPassword,
 						kSecAttrAccount: token,
 						kSecReturnData: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitOne,
 						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 					] as CFDictionary)
-					XCTAssertNil(result?.pointee)
+					#expect(result?.pointee == nil)
 
 					return 12345
 				}
 				else {
-					XCTAssertEqual(query, [
+					#expect(query == [
 						kSecClass: kSecClassGenericPassword,
 						kSecReturnAttributes: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitOne,
 						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 					] as CFDictionary)
-					XCTAssertNil(result?.pointee)
+					#expect(result?.pointee == nil)
 
 					result?.pointee = CFDictionary.withToken(token)
 					return noErr
@@ -303,234 +305,249 @@ final class AccessTokenStoreTests: XCTestCase {
 			}
 		)
 
-		XCTAssertNil(store.first)
+		#expect(store.first == nil)
 	}
 
 	// MARK: AccessTokenStore.accessToken(for:)
 
-	func testAccessTokenForAccountID() {
+	@Test func accessTokenForAccountID() async throws {
 		let appKey = "app_key"
 		let token = "token"
 		let store = AccessTokenStore.mock(
 			appKey: appKey,
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: token,
 					kSecReturnData: kCFBooleanTrue!,
 					kSecMatchLimit: kSecMatchLimitOne,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
-				result?.pointee = try! CFData.mock(accessToken: token, appKey: appKey)
+				result?.pointee = CFData.mock(accessToken: token, appKey: appKey)
 				return noErr
 			}
 		)
 
-		XCTAssertEqual(try store.accessToken(for: token), .mock(accessToken: token, appKey: appKey))
+		#expect(try store.accessToken(for: token) == .mock(accessToken: token, appKey: appKey))
 	}
 
-	func testAccessTokenForAccountIDWhenEmpty() {
+	@Test func accessTokenForAccountIDWhenEmpty() async throws {
 		let appKey = "app_key"
 		let token = "token"
 		let store = AccessTokenStore.mock(
 			appKey: appKey,
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: token,
 					kSecReturnData: kCFBooleanTrue!,
 					kSecMatchLimit: kSecMatchLimitOne,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				result?.pointee = nil
 				return noErr
 			}
 		)
 
-		XCTAssertThrowsError(try store.accessToken(for: token)) {
-			XCTAssertEqual(($0 as? AccessTokenStore.OSStatusError)?.status, -25300)
+		do {
+			_ = try store.accessToken(for: token)
+			Issue.record("Expected to throw AccessTokenStore.OSStatusError with status -25300")
+		} catch let error as AccessTokenStore.OSStatusError {
+			#expect(error.status == -25300)
 		}
 	}
 
-	func testAccessTokenForAccountIDWhenQueryThrowsError() {
+	@Test func accessTokenForAccountIDWhenQueryThrowsError() async throws {
 		let appKey = "app_key"
 		let token = "token"
 		let store = AccessTokenStore.mock(
 			appKey: appKey,
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: token,
 					kSecReturnData: kCFBooleanTrue!,
 					kSecMatchLimit: kSecMatchLimitOne,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				return 12345
 			}
 		)
 
-		XCTAssertThrowsError(try store.accessToken(for: token)) {
-			XCTAssertEqual(($0 as? AccessTokenStore.OSStatusError)?.status, 12345)
+		do {
+			_ = try store.accessToken(for: token)
+			Issue.record("Expected to throw AccessTokenStore.OSStatusError with status 12345")
+		} catch let error as AccessTokenStore.OSStatusError {
+			#expect(error.status == 12345)
 		}
 	}
 
 	// MARK: AccessTokenStore.save(_:)
 
-	func testSaveAccessTokenWhenTokenDoesntExist() {
+	@Test func saveAccessTokenWhenTokenDoesntExist() async throws {
 		let accountID = "account_id"
 		let store = AccessTokenStore.mock(
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				return -25300
 			},
 			add: { attributes, result in
-				XCTAssertEqual(attributes, [
+				#expect(attributes == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
-					kSecValueData: try! CFData.mock(accountID: accountID),
+					kSecValueData: CFData.mock(accountID: accountID),
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				return noErr
 			}
 		)
 
-		XCTAssertNoThrow(try store.save(.mock(accountID: accountID)))
+		try store.save(.mock(accountID: accountID))
 	}
 
-	func testSaveAccessTokenWhenTokenExists() {
+	@Test func saveAccessTokenWhenTokenExists() async throws {
 		let accountID = "account_id"
 		let store = AccessTokenStore.mock(
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				return noErr
 			},
 			update: { query, attributesToUpdate in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertEqual(attributesToUpdate, [
-					kSecValueData: try! CFData.mock(accountID: accountID)
+				#expect(attributesToUpdate == [
+					kSecValueData: CFData.mock(accountID: accountID)
 				] as CFDictionary)
 
 				return noErr
 			}
 		)
 
-		XCTAssertNoThrow(try store.save(.mock(accountID: accountID)))
+		try store.save(.mock(accountID: accountID))
 	}
 
-	func testSaveAccessTokenWhenAttributesQueryThrowsError() {
+	@Test func saveAccessTokenWhenAttributesQueryThrowsError() async throws {
 		let accountID = "account_id"
 		let store = AccessTokenStore.mock(
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				return 12345
 			}
 		)
 
-		XCTAssertThrowsError(try store.save(.mock(accountID: accountID))) {
-			XCTAssertEqual(($0 as? AccessTokenStore.OSStatusError)?.status, 12345)
+		do {
+			try store.save(.mock(accountID: accountID))
+			Issue.record("Expected to throw AccessTokenStore.OSStatusError with status 12345")
+		} catch let error as AccessTokenStore.OSStatusError {
+			#expect(error.status == 12345)
 		}
 	}
 
-	func testSaveAccessTokenWhenTokenDoesntExistAndAddThrowsError() {
+	@Test func saveAccessTokenWhenTokenDoesntExistAndAddThrowsError() async throws {
 		let accountID = "account_id"
 		let store = AccessTokenStore.mock(
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				return -25300
 			},
 			add: { attributes, result in
-				XCTAssertEqual(attributes, [
+				#expect(attributes == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
-					kSecValueData: try! CFData.mock(accountID: accountID),
+					kSecValueData: CFData.mock(accountID: accountID),
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				return 12345
 			}
 		)
 
-		XCTAssertThrowsError(try store.save(.mock(accountID: accountID))) {
-			XCTAssertEqual(($0 as? AccessTokenStore.OSStatusError)?.status, 12345)
+		do {
+			try store.save(.mock(accountID: accountID))
+			Issue.record("Expected to throw AccessTokenStore.OSStatusError with status 12345")
+		} catch let error as AccessTokenStore.OSStatusError {
+			#expect(error.status == 12345)
 		}
 	}
 
-	func testSaveAccessTokenWhenTokenExistsAndUpdateThrowsError() {
+	@Test func saveAccessTokenWhenTokenExistsAndUpdateThrowsError() async throws {
 		let accountID = "account_id"
 		let store = AccessTokenStore.mock(
 			copyMatching: { query, result in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertNil(result?.pointee)
+				#expect(result?.pointee == nil)
 
 				return noErr
 			},
 			update: { query, attributesToUpdate in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
-				XCTAssertEqual(attributesToUpdate, [
-					kSecValueData: try! CFData.mock(accountID: accountID)
+				#expect(attributesToUpdate == [
+					kSecValueData: CFData.mock(accountID: accountID)
 				] as CFDictionary)
 
 				return 12345
 			}
 		)
 
-		XCTAssertThrowsError(try store.save(.mock(accountID: accountID))) {
-			XCTAssertEqual(($0 as? AccessTokenStore.OSStatusError)?.status, 12345)
+		do {
+			try store.save(.mock(accountID: accountID))
+			Issue.record("Expected to throw AccessTokenStore.OSStatusError with status 12345")
+		} catch let error as AccessTokenStore.OSStatusError {
+			#expect(error.status == 12345)
 		}
 	}
 
 	// MARK: AccessTokenStore.remove(_:)
 
-	func testRemoveAccessToken() {
+	@Test func removeAccessToken() async throws {
 		let accountID = "account_id"
 		let store = AccessTokenStore.mock(
 			delete: { query in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
@@ -540,14 +557,14 @@ final class AccessTokenStoreTests: XCTestCase {
 			}
 		)
 
-		XCTAssertNoThrow(try store.remove(.mock(accountID: accountID)))
+		try store.remove(.mock(accountID: accountID))
 	}
 
-	func testRemoveAccessTokenWhenQueryThrowsError() {
+	@Test func removeAccessTokenWhenQueryThrowsError() async throws {
 		let accountID = "account_id"
 		let store = AccessTokenStore.mock(
 			delete: { query in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
@@ -557,17 +574,20 @@ final class AccessTokenStoreTests: XCTestCase {
 			}
 		)
 
-		XCTAssertThrowsError(try store.remove(.mock(accountID: accountID))) {
-			XCTAssertEqual(($0 as? AccessTokenStore.OSStatusError)?.status, 12345)
+		do {
+			try store.remove(.mock(accountID: accountID))
+			Issue.record("Expected to throw AccessTokenStore.OSStatusError with status 12345")
+		} catch let error as AccessTokenStore.OSStatusError {
+			#expect(error.status == 12345)
 		}
 	}
 
 	// MARK: AccessTokenStore.removeAll()
 
-	func testRemoveAll() {
+	@Test func removeAll() async throws {
 		let store = AccessTokenStore.mock(
 			delete: { query in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
@@ -576,13 +596,13 @@ final class AccessTokenStoreTests: XCTestCase {
 			}
 		)
 
-		XCTAssertNoThrow(try store.removeAll())
+		try store.removeAll()
 	}
 
-	func testRemoveAllWhenQueryThrowsError() {
+	@Test func removeAllWhenQueryThrowsError() async throws {
 		let store = AccessTokenStore.mock(
 			delete: { query in
-				XCTAssertEqual(query, [
+				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
 				] as CFDictionary)
@@ -591,8 +611,11 @@ final class AccessTokenStoreTests: XCTestCase {
 			}
 		)
 
-		XCTAssertThrowsError(try store.removeAll()) {
-			XCTAssertEqual(($0 as? AccessTokenStore.OSStatusError)?.status, 12345)
+		do {
+			try store.removeAll()
+			Issue.record("Expected to throw AccessTokenStore.OSStatusError with status 12345")
+		} catch let error as AccessTokenStore.OSStatusError {
+			#expect(error.status == 12345)
 		}
 	}
 
@@ -608,16 +631,21 @@ private extension CFData {
 		teamID: String? = nil,
 		refreshToken: String = "refresh_token",
 		appKey: String = "app_key"
-	) throws -> CFData {
-		try PropertyListEncoder().encode(AccessToken.mock(
-			accessToken: accessToken,
-			expiryDate: expiryDate,
-			scope: scope,
-			accountID: accountID,
-			teamID: teamID,
-			refreshToken: refreshToken,
-			appKey: appKey
-		)) as CFData
+	) -> CFData {
+		do {
+			return try PropertyListEncoder().encode(AccessToken.mock(
+				accessToken: accessToken,
+				expiryDate: expiryDate,
+				scope: scope,
+				accountID: accountID,
+				teamID: teamID,
+				refreshToken: refreshToken,
+				appKey: appKey
+			)) as CFData
+		} catch {
+			Issue.record(error)
+			return Data() as CFData
+		}
 	}
 
 }

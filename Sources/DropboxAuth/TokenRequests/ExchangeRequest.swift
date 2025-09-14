@@ -1,5 +1,5 @@
 //
-// Copyright © 2024 Daniel Farrelly
+// Copyright © 2025 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -24,40 +24,29 @@
 
 import Foundation
 
-struct ExchangeRequest: TokenRequest, Sendable {
+struct ExchangeRequest: API.Request, Sendable {
 
 	typealias Response = ExchangeResponse
+	typealias Error = OAuthError
 
-	static let url = URL(string: "https://api.dropbox.com/oauth2/token")!
+	static let endpoint: API.Endpoint = .oauth
 
-	static let method = Method.post
+	static let method = API.Method.post
 
+	let grantType = "authorization_code"
 	var appKey: String
 	var code: String
 	var verifier: String
 	var redirectURI: String
-	let grantType = "authorization_code"
 
-	enum CodingKeys: String, CodingKey {
-		case appKey = "client_id"
-		case code
-		case verifier = "code_verifier"
-		case redirectURI = "redirect_uri"
-		case grantType = "grant_type"
-	}
-
-	func encode(to encoder: MultipartEncoder) {
-		let container = encoder.container(keyedBy: CodingKeys.self)
-		container.encode(code, forKey: .code)
-		container.encode(verifier, forKey: .verifier)
-		container.encode(redirectURI, forKey: .redirectURI)
-		container.encode(appKey, forKey: .appKey)
-		container.encode(grantType, forKey: .grantType)
+	func configure(_ urlRequest: inout URLRequest) throws {
+		urlRequest.setValue("application/x-www-form-urlencoded; charset=utf-8", forHTTPHeaderField: "Content-Type")
+		urlRequest.httpBody = Data("client_id=\(appKey)&code=\(code)&code_verifier=\(verifier)&redirect_uri=\(redirectURI)&grant_type=\(grantType)".utf8)
 	}
 
 }
 
-struct ExchangeResponse: TokenResponse, Sendable {
+struct ExchangeResponse: API.Response, TokenResponse, Sendable {
 
 	typealias Request = ExchangeRequest
 

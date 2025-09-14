@@ -1,5 +1,5 @@
 //
-// Copyright © 2024 Daniel Farrelly
+// Copyright © 2025 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -22,31 +22,26 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-@testable import DropboxAuth
 import Foundation
 
-extension AccessToken {
+public enum AuthenticationError: String, API.Error, LocalizedError {
 
-	static func mock(
-		accessToken: String = "access_token",
-		expiryDate: Date = .init(timeIntervalSince1970: 1577869200), // 2020-01-01 09:00
-		scope: String? = nil,
-		accountID: String = "account_id",
-		teamID: String? = nil,
-		refreshToken: String = "refresh_token",
-		appKey: String = "app_key"
-	) -> Self {
-		var token = Self(
-			accessToken: accessToken,
-			expiryDate: expiryDate,
-			scope: scope,
-			accountID: accountID,
-			teamID: teamID,
-			refreshToken: refreshToken
-		)
-		token.appKey = appKey
-		return token
+	case invalidAccessToken = "invalid_access_token"
+
+	case expiredAccessToken = "expired_access_token"
+
+	// MARK: Localized Error
+
+	public var errorDescription: String? {
+		NSLocalizedString("AuthenticationError.\(self).description", bundle: .module, comment: "")
+	}
+
+	public var failureReason: String? {
+		NSLocalizedString("AuthenticationError.\(self).failureReason", bundle: .module, comment: "")
+	}
+
+	public var recoverySuggestion: String? {
+		NSLocalizedString("AuthenticationError.recoverySuggestion", bundle: .module, comment: "")
 	}
 
 }
-

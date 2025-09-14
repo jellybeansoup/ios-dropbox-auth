@@ -1,5 +1,5 @@
 //
-// Copyright © 2022 Daniel Farrelly
+// Copyright © 2025 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -24,26 +24,41 @@
 
 import Foundation
 
-public protocol AuthManagerDelegate: AnyObject {
+public extension API {
 
-	/// Called when the auth manager adds a new access token.
-	/// - Parameters:
-	///   - authManager: The auth manager.
-	///   - accessToken: The access token that was added.
-	func authManager(_ authManager: AuthManager, didAdd accessToken: AccessToken)
+	/// Represents an HTTP request method.
+	///
+	/// This enum provides the standard HTTP methods as defined by RFC 7231 and related specifications.
+	/// Use these cases to specify the desired method when constructing a `Request`.
+	@frozen enum Method: String, Sendable {
 
-	/// Called when the auth manager removes an access token.
-	/// - Parameters:
-	///   - authManager: The auth manager.
-	///   - accessToken: The access token that was removed.
-	func authManager(_ authManager: AuthManager, didRemove accessToken: AccessToken)
+		/// The GET method requests a representation of the specified resource.
+		case get = "GET"
 
-}
+		/// The POST method submits data to be processed to a specified resource.
+		case post = "POST"
 
-public extension AuthManagerDelegate {
+		/// The PUT method replaces all current representations of the target resource with the request payload.
+		case put = "PUT"
 
-	func authManager(_ authManager: AuthManager, didAdd accessToken: AccessToken) {}
+		/// The PATCH method applies partial modifications to a resource.
+		case patch = "PATCH"
 
-	func authManager(_ authManager: AuthManager, didRemove accessToken: AccessToken) {}
+		/// The DELETE method deletes the specified resource.
+		case delete = "DELETE"
+
+		/// The HEAD method asks for a response identical to a GET request, but without the response body.
+		case head = "HEAD"
+
+		/// The OPTIONS method describes the communication options for the target resource.
+		case options = "OPTIONS"
+
+		/// The TRACE method performs a message loop-back test along the path to the target resource.
+		case trace = "TRACE"
+
+		/// The CONNECT method establishes a tunnel to the server identified by the target resource.
+		case connect = "CONNECT"
+
+	}
 
 }

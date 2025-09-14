@@ -1,0 +1,38 @@
+{
+  "configurations" : [
+    {
+      "id" : "96F5C03D-93B1-4C76-BB92-CEA7C597A851",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : {
+      "targets" : [
+        {
+          "containerPath" : "container:..\/..",
+          "identifier" : "DropboxAuth",
+          "name" : "DropboxAuth"
+        }
+      ]
+    },
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Example.xcodeproj",
+      "identifier" : "A1CAF01A2838940000242B47",
+      "name" : "DropboxAuthExample (macOS)"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:..\/..",
+        "identifier" : "DropboxAuthTests",
+        "name" : "DropboxAuthTests"
+      }
+    }
+  ],
+  "version" : 1
+}

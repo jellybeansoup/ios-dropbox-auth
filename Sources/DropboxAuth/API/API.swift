@@ -1,5 +1,5 @@
 //
-// Copyright © 2024 Daniel Farrelly
+// Copyright © 2025 Daniel Farrelly
 //
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -22,38 +22,4 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-@testable import DropboxAuth
-import Foundation
-import XCTest
-
-extension AccessTokenStore {
-
-	static func mock(
-		appKey: String = "AccessTokenStore.test",
-		copyMatching: @escaping CopyMatchingHandler = { _, _ in
-			XCTFail("Unexpectedly called `copyMatching` method.")
-			return -1
-		},
-		update: @escaping UpdateHandler = { _, _ in
-			XCTFail("Unexpectedly called `update` method.")
-			return -1
-		},
-		add: @escaping AddHandler = { _, _ in
-			XCTFail("Unexpectedly called `add` method.")
-			return -1
-		},
-		delete: @escaping DeleteHandler = { _ in
-			XCTFail("Unexpectedly called `delete` method.")
-			return -1
-		}
-	) -> Self {
-		Self(
-			appKey: appKey,
-			copyMatching: copyMatching,
-			update: update,
-			add: add,
-			delete: delete
-		)
-	}
-
-}
+public enum API {}

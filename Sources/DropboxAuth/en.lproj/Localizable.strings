@@ -1,0 +1,13 @@
+"OAuthError.unauthorizedClient.description" = "The client is not authorized to request an access token using this method.";
+"OAuthError.accessDenied.description" = "The resource owner or authorization server denied the request.";
+"OAuthError.unsupportedResponseType.description" = "The authorization server does not support obtaining an access token using this method.";
+"OAuthError.invalidRequest.description" = "The request is invalid.";
+"OAuthError.invalidScope.description" = "The requested scope is invalid, unknown, or malformed.";
+"OAuthError.serverError.description" = "The authorization server encountered an unexpected condition that prevented it from fulfilling the request.";
+"OAuthError.temporarilyUnavailable.description" = "The authorization server is currently unable to handle the request due to a temporary overloading or maintenance of the server.";
+
+"AuthenticationError.invalidAccessToken.description" = "Your access token is invalid. Please sign in again.";
+"AuthenticationError.expiredAccessToken.description" = "Your access token has expired. Please sign in again.";
+"AuthenticationError.invalidAccessToken.failureReason" = "Your access token is invalid.";
+"AuthenticationError.expiredAccessToken.failureReason" = "Your access token has expired.";
+"AuthenticationError.recoverySuggestion" = "Please sign in again.";

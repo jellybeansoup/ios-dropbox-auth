@@ -9,7 +9,11 @@ import Testing
 	@Test func encoding() throws {
 		let request = ListFolder.Request(
 			path: "/hello/world",
-			isRecursive: true
+			isRecursive: true,
+			includeDeleted: true,
+			includeHasExplicitSharedMembers: true,
+			includeMountedFolders: false,
+			includeNonDownloadableFiles: false
 		)
 
 		let urlRequest = try request.urlRequest(signedWith: .mock())
@@ -19,7 +23,7 @@ import Testing
 
 		let data = try #require(urlRequest.httpBody)
 		let string = String(data: data, encoding: .utf8)
-		#expect(string == "{\"path\":\"/hello/world\",\"recursive\":true}")
+		#expect(string == "{\"include_deleted\":true,\"include_has_explicit_shared_members\":true,\"include_mounted_folders\":false,\"include_non_downloadable_files\":false,\"path\":\"/hello/world\",\"recursive\":true}")
 
 		#expect(urlRequest.allHTTPHeaderFields == ["Content-Type": "application/json", "Authorization": "Bearer access_token"])
 	}

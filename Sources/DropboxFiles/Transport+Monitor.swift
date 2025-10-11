@@ -43,6 +43,10 @@ public extension Transport {
 	nonisolated func monitor(
 		path: String = "",
 		isRecursive: Bool = true,
+		includeDeleted: Bool = false,
+		includeHasExplicitSharedMembers: Bool = false,
+		includeMountedFolders: Bool = true,
+		includeNonDownloadableFiles: Bool = true,
 		from cursor: Cursor? = nil
 	) -> AsyncThrowingStream<Snapshot, any Error> {
 		.init(bufferingPolicy: .bufferingNewest(1)) { continuation in
@@ -71,7 +75,11 @@ public extension Transport {
 
 						let response = try await listFolder(
 							at: path,
-							isRecursive: isRecursive
+							isRecursive: isRecursive,
+							includeDeleted: includeDeleted,
+							includeHasExplicitSharedMembers: includeHasExplicitSharedMembers,
+							includeMountedFolders: includeMountedFolders,
+							includeNonDownloadableFiles: includeNonDownloadableFiles
 						)
 
 						if case .terminated = continuation.yield(response) {

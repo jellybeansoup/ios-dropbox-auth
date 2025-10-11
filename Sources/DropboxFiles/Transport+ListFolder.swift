@@ -35,12 +35,20 @@ extension Transport {
 	/// - Throws: Errors from the Dropbox API or network failures.
 	func listFolder(
 		at path: String,
-		isRecursive: Bool
+		isRecursive: Bool,
+		includeDeleted: Bool = false,
+		includeHasExplicitSharedMembers: Bool = false,
+		includeMountedFolders: Bool = true,
+		includeNonDownloadableFiles: Bool = true
 	) async throws -> Snapshot {
 		var currentResponse = try await response(
 			for: ListFolder.Request(
 				path: path,
-				isRecursive: isRecursive
+				isRecursive: isRecursive,
+				includeDeleted: includeDeleted,
+				includeHasExplicitSharedMembers: includeHasExplicitSharedMembers,
+				includeMountedFolders: includeMountedFolders,
+				includeNonDownloadableFiles: includeNonDownloadableFiles
 			)
 		)
 

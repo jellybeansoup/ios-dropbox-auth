@@ -39,9 +39,21 @@ enum ListFolder {
 
 		var isRecursive: Bool
 
+		var includeDeleted: Bool = false
+
+		var includeHasExplicitSharedMembers: Bool = false
+
+		var includeMountedFolders: Bool = true
+
+		var includeNonDownloadableFiles: Bool = true
+
 		private enum CodingKeys: String, CodingKey {
 			case path
 			case isRecursive = "recursive"
+			case includeDeleted = "include_deleted"
+			case includeHasExplicitSharedMembers = "include_has_explicit_shared_members"
+			case includeMountedFolders = "include_mounted_folders"
+			case includeNonDownloadableFiles = "include_non_downloadable_files"
 		}
 
 	}

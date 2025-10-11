@@ -56,6 +56,8 @@ struct AccountView: View {
 
 		private let authManager: AuthManager
 
+		private let transport: Transport
+
 		private var accessToken: AccessToken
 
 		@Published var string: String = "Loading account details…"
@@ -64,36 +66,14 @@ struct AccountView: View {
 
 		init(accessToken: AccessToken) {
 			self.authManager = AuthManager(key: "d25u9w2pgql046o")
+			self.transport = Transport(authManager: authManager, token: accessToken)
 			self.accessToken = accessToken
 		}
 
 		func loadAccountDetails() async {
-			let url = URL(string: "https://api.dropboxapi.com/2/users/get_current_account")!
-
-			let refreshedToken: AccessToken
 			do {
-				refreshedToken = try await authManager.refresh(accessToken)
-			}
-			catch {
-				update(with: "Refreshing access token failed: \(error.localizedDescription)")
-
-				return
-			}
-
-			var request = refreshedToken.signedRequest(with: url)
-			request.httpMethod = "POST"
-
-			do {
-				let (data, _) = try await URLSession.shared.data(for: request)
-				let response = try JSONDecoder().decode(Response.self, from: data)
-
-				switch response {
-				case .account(let email):
-					update(with: email)
-
-				case .error(let error):
-					update(with: "Failed to load account details: \(error.localizedDescription)")
-				}
+				let currentAccount = try await transport.getCurrentAccount()
+				update(with: currentAccount.email)
 			}
 			catch {
 				update(with: "Failed to decode account details: \(error.localizedDescription)")

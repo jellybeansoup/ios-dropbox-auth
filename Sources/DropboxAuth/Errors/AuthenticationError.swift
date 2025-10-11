@@ -26,9 +26,33 @@ import Foundation
 
 public enum AuthenticationError: String, API.Error, LocalizedError {
 
+	/// The token has become invalid, which usually happens due to being revoked.
+	///
+	/// If you get this error, you will need to manually prompt the user to reauthenticate before using the account to
+	/// perform any additional API calls.
 	case invalidAccessToken = "invalid_access_token"
 
+	/// The access token has expired and should be refreshed.
+	///
+	/// Refresh is done automatically when using `Transport` APIs, and can be done manually using the APIs available on
+	/// the `AuthManager`. Once refreshed, the new token can be used to make additional calls.
 	case expiredAccessToken = "expired_access_token"
+
+	public init(summary: Summary) throws {
+		guard let component = summary.component else {
+			throw summary
+		}
+
+		if let error = Self(rawValue: component) {
+			self = error
+		}
+		else if component == "invalid_grant" {
+			self = .invalidAccessToken
+		}
+		else {
+			throw summary
+		}
+	}
 
 	// MARK: Localized Error
 

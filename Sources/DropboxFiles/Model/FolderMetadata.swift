@@ -24,40 +24,53 @@
 
 import Foundation
 
-struct Timestamp: RawRepresentable, Codable {
+public struct FolderMetadata: Metadata {
 
-	let rawValue: Date
+	public struct ID: Codable, Hashable, RawRepresentable, Sendable {
 
-	init(rawValue: Date) {
-		self.rawValue = rawValue
-	}
+		public var rawValue: String
 
-	private static let formatter: DateFormatter = {
-		let dateFormatter = DateFormatter()
-		dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-		dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
-		//dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-		return dateFormatter
-	}()
-
-	enum DecodingError: Error, Equatable {
-		case invalidString(String)
-	}
-
-	init(from decoder: Decoder) throws {
-		let container = try decoder.singleValueContainer()
-		let string = try container.decode(String.self)
-
-		guard let date = Self.formatter.date(from: string) else {
-			throw DecodingError.invalidString(string)
+		public init(rawValue: String) {
+			self.rawValue = rawValue
 		}
 
-		self.rawValue = date
 	}
 
-	func encode(to encoder: Encoder) throws {
-		var container = encoder.singleValueContainer()
-		try container.encode(Self.formatter.string(from: rawValue))
+	public let id: ID
+
+	public let name: String
+
+	public let pathLower: String?
+
+	public let pathDisplay: String?
+
+	init(
+		id: ID,
+		name: String,
+		pathLower: String?,
+		pathDisplay: String?
+	) {
+		self.id = id
+		self.name = name
+		self.pathLower = pathLower
+		self.pathDisplay = pathDisplay
+	}
+
+	// Codable
+
+	private enum CodingKeys: String, CodingKey {
+		case id
+		case name = "name"
+		case pathLower = "path_lower"
+		case pathDisplay = "path_display"
+	}
+
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.id = try container.decode(ID.self, forKey: .id)
+		self.name = try container.decode(String.self, forKey: .name)
+		self.pathLower = try container.decode(String?.self, forKey: .pathLower)
+		self.pathDisplay = try container.decode(String?.self, forKey: .pathDisplay)
 	}
 
 }

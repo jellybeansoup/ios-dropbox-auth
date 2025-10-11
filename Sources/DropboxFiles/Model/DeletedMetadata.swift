@@ -24,40 +24,40 @@
 
 import Foundation
 
-struct Timestamp: RawRepresentable, Codable {
+public struct DeletedMetadata: Metadata {
 
-	let rawValue: Date
+	/// The last component of the path (including extension). This never contains a slash.
+	public let name: String
 
-	init(rawValue: Date) {
-		self.rawValue = rawValue
+	/// The lowercased full path in the user's Dropbox.
+	public let pathLower: String?
+
+	/// The cased path to be used for display purposes only.
+	public let pathDisplay: String?
+
+	init(
+		name: String,
+		pathLower: String?,
+		pathDisplay: String?
+	) {
+		self.name = name
+		self.pathLower = pathLower
+		self.pathDisplay = pathDisplay
 	}
 
-	private static let formatter: DateFormatter = {
-		let dateFormatter = DateFormatter()
-		dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-		dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
-		//dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-		return dateFormatter
-	}()
+	// Codable
 
-	enum DecodingError: Error, Equatable {
-		case invalidString(String)
+	private enum CodingKeys: String, CodingKey {
+		case name = "name"
+		case pathLower = "path_lower"
+		case pathDisplay = "path_display"
 	}
 
-	init(from decoder: Decoder) throws {
-		let container = try decoder.singleValueContainer()
-		let string = try container.decode(String.self)
-
-		guard let date = Self.formatter.date(from: string) else {
-			throw DecodingError.invalidString(string)
-		}
-
-		self.rawValue = date
-	}
-
-	func encode(to encoder: Encoder) throws {
-		var container = encoder.singleValueContainer()
-		try container.encode(Self.formatter.string(from: rawValue))
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.name = try container.decode(String.self, forKey: .name)
+		self.pathLower = try container.decode(String?.self, forKey: .pathLower)
+		self.pathDisplay = try container.decode(String?.self, forKey: .pathDisplay)
 	}
 
 }

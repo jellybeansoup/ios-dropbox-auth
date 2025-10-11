@@ -24,40 +24,28 @@
 
 import Foundation
 
-struct Timestamp: RawRepresentable, Codable {
+struct DecodingContainer: Decodable {
 
-	let rawValue: Date
-
-	init(rawValue: Date) {
-		self.rawValue = rawValue
+	private enum Tag: String, Decodable {
+		case deleted
+		case file
+		case folder
 	}
 
-	private static let formatter: DateFormatter = {
-		let dateFormatter = DateFormatter()
-		dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-		dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
-		//dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-		return dateFormatter
-	}()
+	var value: any Metadata
 
-	enum DecodingError: Error, Equatable {
-		case invalidString(String)
+	private enum CodingKeys: String, CodingKey {
+		case tag = ".tag"
 	}
 
-	init(from decoder: Decoder) throws {
-		let container = try decoder.singleValueContainer()
-		let string = try container.decode(String.self)
-
-		guard let date = Self.formatter.date(from: string) else {
-			throw DecodingError.invalidString(string)
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		value = switch try container.decode(Tag.self, forKey: .tag) {
+		case .deleted: try DeletedMetadata(from: decoder)
+		case .file: try FileMetadata(from: decoder)
+		case .folder: try FolderMetadata(from: decoder)
 		}
-
-		self.rawValue = date
-	}
-
-	func encode(to encoder: Encoder) throws {
-		var container = encoder.singleValueContainer()
-		try container.encode(Self.formatter.string(from: rawValue))
 	}
 
 }
+

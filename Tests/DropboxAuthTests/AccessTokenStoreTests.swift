@@ -29,6 +29,13 @@ import Testing
 
 @Suite struct AccessTokenStoreTests {
 
+	/// The Keychain service string that `AccessTokenStore` derives from the host bundle's
+	/// identifier. This mirrors `AccessTokenStore.query(with:)`, which reads
+	/// `Bundle.main.bundleIdentifier` at runtime. That value differs depending on how the
+	/// test target is hosted (e.g. Xcode's xctest bundle vs. `swift test`'s bare executable,
+	/// which has no bundle identifier), so it must be computed here rather than hardcoded.
+	private let expectedService = "\(Bundle.main.bundleIdentifier ?? "").dropbox.authv2"
+
 	// MARK: AccessTokenStore.isEmpty
 
 	@Test func isEmpty() async throws {
@@ -37,7 +44,7 @@ import Testing
 				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecMatchLimit: kSecMatchLimitOne,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -55,7 +62,7 @@ import Testing
 				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecMatchLimit: kSecMatchLimitOne,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -73,7 +80,7 @@ import Testing
 				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecMatchLimit: kSecMatchLimitOne,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -98,7 +105,7 @@ import Testing
 						kSecAttrAccount: token,
 						kSecReturnData: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitOne,
-						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+						kSecAttrService: expectedService
 					] as CFDictionary)
 					#expect(result?.pointee == nil)
 
@@ -110,7 +117,7 @@ import Testing
 						kSecClass: kSecClassGenericPassword,
 						kSecReturnAttributes: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitAll,
-						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+						kSecAttrService: expectedService
 					] as CFDictionary)
 					#expect(result?.pointee == nil)
 
@@ -130,7 +137,7 @@ import Testing
 					kSecClass: kSecClassGenericPassword,
 					kSecReturnAttributes: kCFBooleanTrue!,
 					kSecMatchLimit: kSecMatchLimitAll,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -149,7 +156,7 @@ import Testing
 					kSecClass: kSecClassGenericPassword,
 					kSecReturnAttributes: kCFBooleanTrue!,
 					kSecMatchLimit: kSecMatchLimitAll,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -172,7 +179,7 @@ import Testing
 						kSecAttrAccount: token,
 						kSecReturnData: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitOne,
-						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+						kSecAttrService: expectedService
 					] as CFDictionary)
 					#expect(result?.pointee == nil)
 
@@ -183,7 +190,7 @@ import Testing
 						kSecClass: kSecClassGenericPassword,
 						kSecReturnAttributes: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitAll,
-						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+						kSecAttrService: expectedService
 					] as CFDictionary)
 					#expect(result?.pointee == nil)
 
@@ -210,7 +217,7 @@ import Testing
 						kSecAttrAccount: token,
 						kSecReturnData: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitOne,
-						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+						kSecAttrService: expectedService
 					] as CFDictionary)
 					#expect(result?.pointee == nil)
 
@@ -222,7 +229,7 @@ import Testing
 						kSecClass: kSecClassGenericPassword,
 						kSecReturnAttributes: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitOne,
-						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+						kSecAttrService: expectedService
 					] as CFDictionary)
 					#expect(result?.pointee == nil)
 
@@ -242,7 +249,7 @@ import Testing
 					kSecClass: kSecClassGenericPassword,
 					kSecReturnAttributes: kCFBooleanTrue!,
 					kSecMatchLimit: kSecMatchLimitOne,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -261,7 +268,7 @@ import Testing
 					kSecClass: kSecClassGenericPassword,
 					kSecReturnAttributes: kCFBooleanTrue!,
 					kSecMatchLimit: kSecMatchLimitOne,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -284,7 +291,7 @@ import Testing
 						kSecAttrAccount: token,
 						kSecReturnData: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitOne,
-						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+						kSecAttrService: expectedService
 					] as CFDictionary)
 					#expect(result?.pointee == nil)
 
@@ -295,7 +302,7 @@ import Testing
 						kSecClass: kSecClassGenericPassword,
 						kSecReturnAttributes: kCFBooleanTrue!,
 						kSecMatchLimit: kSecMatchLimitOne,
-						kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+						kSecAttrService: expectedService
 					] as CFDictionary)
 					#expect(result?.pointee == nil)
 
@@ -321,7 +328,7 @@ import Testing
 					kSecAttrAccount: token,
 					kSecReturnData: kCFBooleanTrue!,
 					kSecMatchLimit: kSecMatchLimitOne,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -344,7 +351,7 @@ import Testing
 					kSecAttrAccount: token,
 					kSecReturnData: kCFBooleanTrue!,
 					kSecMatchLimit: kSecMatchLimitOne,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -372,7 +379,7 @@ import Testing
 					kSecAttrAccount: token,
 					kSecReturnData: kCFBooleanTrue!,
 					kSecMatchLimit: kSecMatchLimitOne,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -397,7 +404,7 @@ import Testing
 				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -408,7 +415,7 @@ import Testing
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
 					kSecValueData: CFData.mock(accountID: accountID),
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -426,7 +433,7 @@ import Testing
 				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -436,7 +443,7 @@ import Testing
 				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(attributesToUpdate == [
 					kSecValueData: CFData.mock(accountID: accountID)
@@ -456,7 +463,7 @@ import Testing
 				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -479,7 +486,7 @@ import Testing
 				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -490,7 +497,7 @@ import Testing
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
 					kSecValueData: CFData.mock(accountID: accountID),
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -513,7 +520,7 @@ import Testing
 				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
 
@@ -523,7 +530,7 @@ import Testing
 				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(attributesToUpdate == [
 					kSecValueData: CFData.mock(accountID: accountID)
@@ -550,7 +557,7 @@ import Testing
 				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 
 				return noErr
@@ -567,7 +574,7 @@ import Testing
 				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 
 				return 12345
@@ -589,7 +596,7 @@ import Testing
 			delete: { query in
 				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 
 				return noErr
@@ -604,7 +611,7 @@ import Testing
 			delete: { query in
 				#expect(query == [
 					kSecClass: kSecClassGenericPassword,
-					kSecAttrService: "com.apple.dt.xctest.tool.dropbox.authv2"
+					kSecAttrService: expectedService
 				] as CFDictionary)
 
 				return 12345

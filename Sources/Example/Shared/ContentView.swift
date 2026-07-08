@@ -88,15 +88,23 @@ struct ContentView: View {
 
 	var body: some View {
 		if let accessToken = viewModel.accessToken {
-			VStack(spacing: 10) {
-				AccountView(accessToken: accessToken)
-					.multilineTextAlignment(.center)
+			// `NavigationView` rather than `NavigationStack`, since the deployment targets
+			// (iOS 15 / macOS 12.3) predate `NavigationStack` (iOS 16 / macOS 13).
+			NavigationView {
+				VStack(spacing: 10) {
+					AccountView(accessToken: accessToken)
+						.multilineTextAlignment(.center)
 
-				Button("Disconnect") {
-					viewModel.disconnect()
+					NavigationLink("Browse Files") {
+						FilesView(accessToken: accessToken)
+					}
+
+					Button("Disconnect") {
+						viewModel.disconnect()
+					}
 				}
+				.scenePadding()
 			}
-			.scenePadding()
 		}
 		else {
 			Button("Connect to Dropbox") {

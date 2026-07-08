@@ -17,6 +17,14 @@
 		A1CAF04F2838947800242B47 /* DropboxAuth in Frameworks */ = {isa = PBXBuildFile; productRef = A1CAF04E2838947800242B47 /* DropboxAuth */; };
 		A1CAF055283934B700242B47 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CAF054283934B700242B47 /* AccountView.swift */; };
 		A1CAF056283934B700242B47 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CAF054283934B700242B47 /* AccountView.swift */; };
+		E3FF6824CE8AA36CEF671FEF /* FilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB16EA5356B5A53883BB0085 /* FilesView.swift */; };
+		3066621CBE6BA0CD2C4334D3 /* FilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB16EA5356B5A53883BB0085 /* FilesView.swift */; };
+		56DD25EDF45865D8100AF1D4 /* FileThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD013E302556832DA49BC081 /* FileThumbnailView.swift */; };
+		76F07D9B390CB0F8BCFF6E65 /* FileThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD013E302556832DA49BC081 /* FileThumbnailView.swift */; };
+		BD5DB55CF83AB9B0B34FCC10 /* ThumbnailCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D4556362AF431580D41EF9E /* ThumbnailCache.swift */; };
+		3F9271F9D4498A9A3A00B38F /* ThumbnailCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D4556362AF431580D41EF9E /* ThumbnailCache.swift */; };
+		D885656F853FF07B095C2088 /* DropboxFiles in Frameworks */ = {isa = PBXBuildFile; productRef = 94B5F38AAD1099EC0F1F84D7 /* DropboxFiles */; };
+		EA962DA5CC363821C90B335E /* DropboxFiles in Frameworks */ = {isa = PBXBuildFile; productRef = BF41548CE821907BDB9CD8CE /* DropboxFiles */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +39,9 @@
 		A1CAF0522838E2D400242B47 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1CAF0532838ED1900242B47 /* iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iOS.entitlements; sourceTree = "<group>"; };
 		A1CAF054283934B700242B47 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
+		EB16EA5356B5A53883BB0085 /* FilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesView.swift; sourceTree = "<group>"; };
+		AD013E302556832DA49BC081 /* FileThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileThumbnailView.swift; sourceTree = "<group>"; };
+		4D4556362AF431580D41EF9E /* ThumbnailCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailCache.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,6 +50,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1CAF04C2838945D00242B47 /* DropboxAuth in Frameworks */,
+				D885656F853FF07B095C2088 /* DropboxFiles in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -47,6 +59,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1CAF04F2838947800242B47 /* DropboxAuth in Frameworks */,
+				EA962DA5CC363821C90B335E /* DropboxFiles in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +91,9 @@
 				A1CAF00E283893FF00242B47 /* App.swift */,
 				A1CAF00F283893FF00242B47 /* ContentView.swift */,
 				A1CAF054283934B700242B47 /* AccountView.swift */,
+				EB16EA5356B5A53883BB0085 /* FilesView.swift */,
+				AD013E302556832DA49BC081 /* FileThumbnailView.swift */,
+				4D4556362AF431580D41EF9E /* ThumbnailCache.swift */,
 				A1CAF0102838940000242B47 /* Assets.xcassets */,
 				A148F2022E54725500BFE02E /* Example.xctestplan */,
 				A1CAF0522838E2D400242B47 /* Info.plist */,
@@ -120,6 +136,7 @@
 			name = "DropboxAuthExample (iOS)";
 			packageProductDependencies = (
 				A1CAF04B2838945D00242B47 /* DropboxAuth */,
+				94B5F38AAD1099EC0F1F84D7 /* DropboxFiles */,
 			);
 			productName = "DropboxAuthExample (iOS)";
 			productReference = A1CAF0152838940000242B47 /* DropboxAuthExample.app */;
@@ -140,6 +157,7 @@
 			name = "DropboxAuthExample (macOS)";
 			packageProductDependencies = (
 				A1CAF04E2838947800242B47 /* DropboxAuth */,
+				BF41548CE821907BDB9CD8CE /* DropboxFiles */,
 			);
 			productName = "DropboxAuthExample (macOS)";
 			productReference = A1CAF01B2838940000242B47 /* DropboxAuthExample.app */;
@@ -212,6 +230,9 @@
 				A1CAF055283934B700242B47 /* AccountView.swift in Sources */,
 				A1CAF0382838940000242B47 /* ContentView.swift in Sources */,
 				A1CAF0362838940000242B47 /* App.swift in Sources */,
+				E3FF6824CE8AA36CEF671FEF /* FilesView.swift in Sources */,
+				56DD25EDF45865D8100AF1D4 /* FileThumbnailView.swift in Sources */,
+				BD5DB55CF83AB9B0B34FCC10 /* ThumbnailCache.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -222,6 +243,9 @@
 				A1CAF056283934B700242B47 /* AccountView.swift in Sources */,
 				A1CAF0392838940000242B47 /* ContentView.swift in Sources */,
 				A1CAF0372838940000242B47 /* App.swift in Sources */,
+				3066621CBE6BA0CD2C4334D3 /* FilesView.swift in Sources */,
+				76F07D9B390CB0F8BCFF6E65 /* FileThumbnailView.swift in Sources */,
+				3F9271F9D4498A9A3A00B38F /* ThumbnailCache.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -569,6 +593,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1CAF04A2838945D00242B47 /* XCRemoteSwiftPackageReference "ios-dropbox-auth" */;
 			productName = DropboxAuth;
+		};
+		94B5F38AAD1099EC0F1F84D7 /* DropboxFiles */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1CAF04A2838945D00242B47 /* XCRemoteSwiftPackageReference "ios-dropbox-auth" */;
+			productName = DropboxFiles;
+		};
+		BF41548CE821907BDB9CD8CE /* DropboxFiles */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1CAF04A2838945D00242B47 /* XCRemoteSwiftPackageReference "ios-dropbox-auth" */;
+			productName = DropboxFiles;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

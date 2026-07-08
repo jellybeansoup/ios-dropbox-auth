@@ -25,7 +25,7 @@
 import Foundation
 import DropboxAuth
 
-extension Transport {
+public extension Transport {
 
 	/// Creates a shared link for the file or folder at the given path, with public visibility.
 	///

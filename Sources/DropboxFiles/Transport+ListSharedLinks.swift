@@ -25,7 +25,7 @@
 import Foundation
 import DropboxAuth
 
-extension Transport {
+public extension Transport {
 
 	/// Retrieves shared links for a Dropbox path, handling pagination via the `hasMore` property.
 	/// - Parameters:

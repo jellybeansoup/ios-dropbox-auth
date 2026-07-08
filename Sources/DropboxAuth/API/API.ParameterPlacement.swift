@@ -35,6 +35,9 @@ public extension API {
 		case body
 
 		/// Parameters are JSON-encoded, ASCII-escaped, and set as the `Dropbox-API-Arg` HTTP header, leaving the body untouched.
+		///
+		/// Non-ASCII content is escaped per RFC 8259 (as `\uXXXX`, with UTF-16 surrogate pairs for non-BMP
+		/// characters) — see ``API/headerArgEncodedJSONString(_:)`` for the exact encoding.
 		case header
 
 	}

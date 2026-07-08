@@ -6,15 +6,6 @@ import Testing
 
 @Suite struct ListSharedLinksTests {
 
-	/// Parses a Dropbox-style timestamp string the same way `Timestamp` does, so expectations
-	/// stay correct regardless of the timezone tests run in.
-	private static func date(_ string: String) -> Date {
-		let formatter = DateFormatter()
-		formatter.locale = Locale(identifier: "en_US_POSIX")
-		formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
-		return formatter.date(from: string)!
-	}
-
 	@Test func encoding() throws {
 		let request = ListSharedLinks.Request(
 			path: "/hello/world",
@@ -98,9 +89,9 @@ import Testing
 			id: .init(rawValue: "id:a4ayc_80_OEAAAAAAAAAXw"),
 			pathLower: "/homework/math/prime_numbers.txt",
 			numberOfBytes: 7212,
-			dateModifiedOnClient: Self.date("2015-05-12T15:50:38Z"),
-			dateModifiedOnServer: Self.date("2015-05-12T15:50:38Z"),
-			dateOfExpiry: Self.date("2020-05-12T15:50:38Z")
+			dateModifiedOnClient: testDate("2015-05-12T15:50:38Z"),
+			dateModifiedOnServer: testDate("2015-05-12T15:50:38Z"),
+			dateOfExpiry: testDate("2020-05-12T15:50:38Z")
 		))
 		#expect(response.links[1] as? FolderLinkMetadata == FolderLinkMetadata(
 			url: URL(string: "https://www.dropbox.com/sh/s6fvw6ol7rmqo1x/AAAgWRSbjmYsFxSHJk4o9CoDa?dl=0")!,

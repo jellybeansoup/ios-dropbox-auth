@@ -25,7 +25,7 @@
 import Foundation
 import DropboxAuth
 
-enum RelocationError: Error, API.Error {
+public enum RelocationError: Error, API.Error {
 
 	case fromLookup(LookupError)
 
@@ -51,7 +51,7 @@ enum RelocationError: Error, API.Error {
 
 	case cantMoveSharedFolder
 
-	init(summary: Summary) throws {
+	public init(summary: Summary) throws {
 		switch summary.component {
 		case "from_lookup":
 			self = .fromLookup(try summary.next())

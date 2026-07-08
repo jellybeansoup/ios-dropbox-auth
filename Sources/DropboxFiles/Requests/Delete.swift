@@ -25,25 +25,29 @@
 import Foundation
 import DropboxAuth
 
-enum Delete {
+public enum Delete {
 
-	struct Request: API.Request {
+	public struct Request: API.Request {
 
-		typealias Response = Delete.Response
-		typealias Error = Delete.Error
+		public typealias Response = Delete.Response
+		public typealias Error = Delete.Error
 
-		static let endpoint: Endpoint = "/files/delete_v2"
-		static let method = Method.post
+		public static let endpoint: Endpoint = "/files/delete_v2"
+		public static let method = Method.post
 
-		var path: String
+		public var path: String
+
+		public init(path: String) {
+			self.path = path
+		}
 
 	}
 
-	struct Response: API.Response {
+	public struct Response: API.Response {
 
-		typealias Request = Delete.Request
+		public typealias Request = Delete.Request
 
-		var metadata: any Metadata
+		public var metadata: any Metadata
 
 		init(metadata: any Metadata) {
 			self.metadata = metadata
@@ -55,7 +59,7 @@ enum Delete {
 			case metadata
 		}
 
-		init(from decoder: Decoder) throws {
+		public init(from decoder: Decoder) throws {
 			let container = try decoder.container(keyedBy: CodingKeys.self)
 
 			self.init(
@@ -65,16 +69,16 @@ enum Delete {
 
 	}
 
-	enum Error: API.Error {
+	public enum Error: API.Error {
 
-		typealias Request = Delete.Request
+		public typealias Request = Delete.Request
 
 		case lookup(LookupError)
 		case write(WriteError)
 		case tooManyWriteOperations
 		case tooManyFiles
 
-		init(summary: Summary) throws {
+		public init(summary: Summary) throws {
 			switch summary.component {
 			case "path_lookup":
 				self = .lookup(try summary.next())

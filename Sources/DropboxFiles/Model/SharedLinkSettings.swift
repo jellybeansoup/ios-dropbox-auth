@@ -27,17 +27,17 @@ import Foundation
 /// Settings for a shared link, used when creating one.
 ///
 /// Only `requestedVisibility: .public` is modelled — the only visibility GIFwrapped requests.
-struct SharedLinkSettings: Hashable, Sendable {
+public struct SharedLinkSettings: Hashable, Sendable {
 
-	enum RequestedVisibility: String, Hashable, Sendable {
+	public enum RequestedVisibility: String, Hashable, Sendable {
 
 		case `public`
 
 	}
 
-	var requestedVisibility: RequestedVisibility?
+	public var requestedVisibility: RequestedVisibility?
 
-	init(requestedVisibility: RequestedVisibility? = nil) {
+	public init(requestedVisibility: RequestedVisibility? = nil) {
 		self.requestedVisibility = requestedVisibility
 	}
 
@@ -64,7 +64,7 @@ extension SharedLinkSettings: Encodable {
 
 	}
 
-	func encode(to encoder: Encoder) throws {
+	public func encode(to encoder: Encoder) throws {
 		var container = encoder.container(keyedBy: CodingKeys.self)
 
 		if let requestedVisibility {

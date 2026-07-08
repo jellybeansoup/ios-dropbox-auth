@@ -25,7 +25,7 @@
 import Foundation
 import DropboxAuth
 
-extension Transport {
+public extension Transport {
 
 	/// Deletes the file or folder at the given path.
 	/// - Parameter path: The path of the file or folder to delete.

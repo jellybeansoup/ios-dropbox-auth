@@ -25,7 +25,7 @@
 import Foundation
 import DropboxAuth
 
-extension Transport {
+public extension Transport {
 
 	/// Moves (or renames) a file or folder to a new path.
 	/// - Parameters:

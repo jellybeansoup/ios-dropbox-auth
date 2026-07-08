@@ -28,6 +28,9 @@ import DropboxAuth
 public enum GetThumbnail {
 
 	/// The image format for the generated thumbnail.
+	///
+	/// Only `png` is modelled — the only format GIFwrapped requests — out of Dropbox's larger option set,
+	/// matching the legacy (v1) client's argument shape.
 	public enum Format: String, Encodable, Hashable, Sendable {
 
 		case png
@@ -35,6 +38,9 @@ public enum GetThumbnail {
 	}
 
 	/// The target dimensions for the generated thumbnail.
+	///
+	/// Only `w640h480` is modelled — the only size GIFwrapped requests — out of Dropbox's larger option set,
+	/// matching the legacy (v1) client's argument shape.
 	public enum Size: String, Encodable, Hashable, Sendable {
 
 		case w640h480

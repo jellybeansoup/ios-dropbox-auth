@@ -25,27 +25,35 @@
 import Foundation
 import DropboxAuth
 
-enum CreateSharedLinkWithSettings {
+public enum CreateSharedLinkWithSettings {
 
-	struct Request: API.Request {
+	public struct Request: API.Request {
 
-		typealias Response = CreateSharedLinkWithSettings.Response
-		typealias Error = CreateSharedLinkWithSettings.Error
+		public typealias Response = CreateSharedLinkWithSettings.Response
+		public typealias Error = CreateSharedLinkWithSettings.Error
 
-		static let endpoint: Endpoint = "/sharing/create_shared_link_with_settings"
-		static let method = Method.post
+		public static let endpoint: Endpoint = "/sharing/create_shared_link_with_settings"
+		public static let method = Method.post
 
-		var path: String
+		public var path: String
 
-		var settings: SharedLinkSettings? = nil
+		public var settings: SharedLinkSettings? = nil
+
+		public init(
+			path: String,
+			settings: SharedLinkSettings? = nil
+		) {
+			self.path = path
+			self.settings = settings
+		}
 
 	}
 
-	struct Response: API.Response {
+	public struct Response: API.Response {
 
-		typealias Request = CreateSharedLinkWithSettings.Request
+		public typealias Request = CreateSharedLinkWithSettings.Request
 
-		var link: any LinkMetadata
+		public var link: any LinkMetadata
 
 		init(link: any LinkMetadata) {
 			self.link = link
@@ -53,15 +61,15 @@ enum CreateSharedLinkWithSettings {
 
 		// MARK: Decodable
 
-		init(from decoder: Decoder) throws {
+		public init(from decoder: Decoder) throws {
 			self.init(link: try LinkMetadataDecodingContainer(from: decoder).value)
 		}
 
 	}
 
-	enum Error: Swift.Error {
+	public enum Error: Swift.Error {
 
-		typealias Request = CreateSharedLinkWithSettings.Request
+		public typealias Request = CreateSharedLinkWithSettings.Request
 
 		case lookup(LookupError)
 		case emailNotVerified
@@ -71,7 +79,7 @@ enum CreateSharedLinkWithSettings {
 		case settings(SharedLinkSettingsError)
 		case accessDenied
 
-		init(summary: Summary) throws {
+		public init(summary: Summary) throws {
 			switch summary.component {
 			case "path":
 				self = .lookup(try summary.next())
@@ -95,7 +103,7 @@ enum CreateSharedLinkWithSettings {
 		/// chain to `init(summary:)`. This overload receives the full response decoder as well, so this one
 		/// error case can reach into the `error` object's payload — without changing behaviour for any other
 		/// request's error decoding, which continues to rely on the default `init(summary:decoder:)`.
-		init(summary: Summary, decoder: Decoder) throws {
+		public init(summary: Summary, decoder: Decoder) throws {
 			guard summary.component == "shared_link_already_exists" else {
 				self = try Self(summary: summary)
 				return
@@ -147,7 +155,7 @@ enum CreateSharedLinkWithSettings {
 // requires `Sendable` conformance from every concrete type that can be stored in the existential.
 extension CreateSharedLinkWithSettings.Error: Equatable {
 
-	static func == (lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		switch (lhs, rhs) {
 		case (.lookup(let lhs), .lookup(let rhs)):
 			return lhs == rhs
@@ -175,7 +183,7 @@ extension CreateSharedLinkWithSettings.Error: Equatable {
 
 extension CreateSharedLinkWithSettings.Error: Hashable {
 
-	func hash(into hasher: inout Hasher) {
+	public func hash(into hasher: inout Hasher) {
 		switch self {
 		case .lookup(let error):
 			hasher.combine(0)

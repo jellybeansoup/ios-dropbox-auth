@@ -25,7 +25,7 @@
 import Foundation
 import DropboxAuth
 
-enum SharedLinkSettingsError: String, Error, API.Error {
+public enum SharedLinkSettingsError: String, Error, API.Error {
 
 	case invalidSettings = "invalid_settings"
 

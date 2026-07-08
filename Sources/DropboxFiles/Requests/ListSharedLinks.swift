@@ -25,24 +25,34 @@
 import Foundation
 import DropboxAuth
 
-enum ListSharedLinks {
+public enum ListSharedLinks {
 
-	struct Request: API.Request {
+	public struct Request: API.Request {
 
-		typealias Response = ListSharedLinks.Response
-		typealias Error = ListSharedLinks.Error
+		public typealias Response = ListSharedLinks.Response
+		public typealias Error = ListSharedLinks.Error
 
-		static let endpoint: Endpoint = "/sharing/list_shared_links"
-		static let method = Method.post
+		public static let endpoint: Endpoint = "/sharing/list_shared_links"
+		public static let method = Method.post
 
 		/// The path to retrieve links for. If `nil` a list of all shared links for the current user is requested.
-		var path: String? = nil
+		public var path: String? = nil
 
 		/// The cursor returned by the last `ListSharedLinks.Response`. Used to handle paginated results.
-		var cursor: Cursor? = nil
+		public var cursor: Cursor? = nil
 
 		/// Suppress links to parent folders.
-		var isDirectOnly: Bool? = nil
+		public var isDirectOnly: Bool? = nil
+
+		public init(
+			path: String? = nil,
+			cursor: Cursor? = nil,
+			isDirectOnly: Bool? = nil
+		) {
+			self.path = path
+			self.cursor = cursor
+			self.isDirectOnly = isDirectOnly
+		}
 
 		private enum CodingKeys: String, CodingKey {
 			case path
@@ -52,15 +62,15 @@ enum ListSharedLinks {
 
 	}
 
-	struct Response: API.Response {
+	public struct Response: API.Response {
 
-		typealias Request = ListSharedLinks.Request
+		public typealias Request = ListSharedLinks.Request
 
-		var cursor: Cursor?
+		public var cursor: Cursor?
 
-		var links: [any LinkMetadata]
+		public var links: [any LinkMetadata]
 
-		var hasMore: Bool
+		public var hasMore: Bool
 
 		init(
 			cursor: Cursor?,
@@ -92,14 +102,14 @@ enum ListSharedLinks {
 
 	}
 
-	enum Error: API.Error {
+	public enum Error: API.Error {
 
-		typealias Request = ListSharedLinks.Request
+		public typealias Request = ListSharedLinks.Request
 
 		case lookup(LookupError)
 		case reset
 
-		init(summary: Summary) throws {
+		public init(summary: Summary) throws {
 			switch summary.component {
 			case "path":
 				self = .lookup(try summary.next())

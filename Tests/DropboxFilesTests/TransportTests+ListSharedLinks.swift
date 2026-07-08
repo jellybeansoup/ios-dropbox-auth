@@ -6,15 +6,6 @@ import Testing
 
 @Suite struct TransportListSharedLinksTests {
 
-	/// Parses a Dropbox-style timestamp string the same way `Timestamp` does, so expectations
-	/// stay correct regardless of the timezone tests run in.
-	private static func date(_ string: String) -> Date {
-		let formatter = DateFormatter()
-		formatter.locale = Locale(identifier: "en_US_POSIX")
-		formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
-		return formatter.date(from: string)!
-	}
-
 	@Test func success() async throws {
 		let transport = MockTransport(
 			responses: [
@@ -33,7 +24,7 @@ import Testing
 				permissions: .init(resolvedVisibility: .public, canRevoke: true),
 				id: .init(rawValue: "id:1234"),
 				pathLower: "/example",
-				dateOfExpiry: Self.date("2020-05-12T15:50:38Z")
+				dateOfExpiry: testDate("2020-05-12T15:50:38Z")
 			)
 		)
 		#expect(
@@ -43,7 +34,7 @@ import Testing
 				permissions: .init(resolvedVisibility: .teamOnly, canRevoke: false),
 				id: .init(rawValue: "id:5678"),
 				pathLower: "/alternate",
-				dateOfExpiry: Self.date("2020-05-12T15:50:38Z")
+				dateOfExpiry: testDate("2020-05-12T15:50:38Z")
 			)
 		)
 	}

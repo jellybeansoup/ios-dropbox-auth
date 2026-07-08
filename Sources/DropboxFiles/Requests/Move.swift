@@ -25,21 +25,31 @@
 import Foundation
 import DropboxAuth
 
-enum Move {
+public enum Move {
 
-	struct Request: API.Request {
+	public struct Request: API.Request {
 
-		typealias Response = Move.Response
-		typealias Error = RelocationError
+		public typealias Response = Move.Response
+		public typealias Error = RelocationError
 
-		static let endpoint: Endpoint = "/files/move_v2"
-		static let method = Method.post
+		public static let endpoint: Endpoint = "/files/move_v2"
+		public static let method = Method.post
 
-		var fromPath: String
+		public var fromPath: String
 
-		var toPath: String
+		public var toPath: String
 
-		var autorename: Bool = false
+		public var autorename: Bool = false
+
+		public init(
+			fromPath: String,
+			toPath: String,
+			autorename: Bool = false
+		) {
+			self.fromPath = fromPath
+			self.toPath = toPath
+			self.autorename = autorename
+		}
 
 		private enum CodingKeys: String, CodingKey {
 			case fromPath = "from_path"
@@ -49,11 +59,11 @@ enum Move {
 
 	}
 
-	struct Response: API.Response {
+	public struct Response: API.Response {
 
-		typealias Request = Move.Request
+		public typealias Request = Move.Request
 
-		var metadata: any Metadata
+		public var metadata: any Metadata
 
 		init(metadata: any Metadata) {
 			self.metadata = metadata
@@ -65,7 +75,7 @@ enum Move {
 			case metadata
 		}
 
-		init(from decoder: Decoder) throws {
+		public init(from decoder: Decoder) throws {
 			let container = try decoder.container(keyedBy: CodingKeys.self)
 
 			self.init(

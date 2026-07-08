@@ -28,18 +28,32 @@ public struct Snapshot: Sendable {
 
 	/// Metadata values that represent files within the Dropbox account
 	/// currently being monitored.
+	///
+	/// When ``isReset`` is `true`, this is the complete set of entries for the monitored folder. When `false`,
+	/// this only contains the entries that changed (or were removed) since the previous snapshot's `cursor`.
 	public let metadata: [any Metadata]
 
 	/// The cursor used by Dropbox to reference the current state of the
 	/// account, after applying the included `metadata` changes.
 	public let cursor: Cursor
 
+	/// Whether `metadata` represents the complete state of the monitored folder, rather than an incremental
+	/// delta.
+	///
+	/// This is `true` for the initial listing and for any snapshot produced after Dropbox reports that the
+	/// previous cursor is no longer valid (a "reset"), in which case the caller should replace its local state
+	/// entirely rather than merge. It is `false` for snapshots produced from `list_folder/continue`, which only
+	/// contain changed or removed entries relative to the previous cursor.
+	public let isReset: Bool
+
 	init(
 		metadata: [any Metadata],
-		cursor: Cursor
+		cursor: Cursor,
+		isReset: Bool = false
 	) {
 		self.metadata = metadata
 		self.cursor = cursor
+		self.isReset = isReset
 	}
 
 }

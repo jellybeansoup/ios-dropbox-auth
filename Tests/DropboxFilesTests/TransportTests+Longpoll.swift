@@ -38,10 +38,9 @@ import Testing
 			]
 		)
 
-		let response = try await transport.longpoll(cursor: "cursor", timeout: 10)
-
-		#expect(response.hasChanges)
-		#expect(response.backoff == 60)
+		await #expect(throws: ListFolder.Longpoll.Error.reset) {
+			_ = try await transport.longpoll(cursor: "cursor", timeout: 10)
+		}
 	}
 
 }

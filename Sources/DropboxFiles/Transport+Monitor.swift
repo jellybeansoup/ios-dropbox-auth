@@ -30,8 +30,16 @@ public extension Transport {
 	/// Monitors changes to a Dropbox folder, yielding updates as they occur.
 	///
 	/// This function creates an `AsyncThrowingStream` that continuously observes a specified Dropbox folder (and
-	/// optionally its subfolders) for changes. It uses Dropbox's longpoll API to efficiently wait for updates and
-	/// yields each batch of changes as a ``Snapshot``.
+	/// optionally its subfolders) for changes. It uses Dropbox's longpoll API to efficiently wait for updates,
+	/// then fetches only the changed entries via `list_folder/continue` and yields them as an incremental
+	/// ``Snapshot`` (`isReset == false`). If Dropbox reports that the cursor is no longer valid (a "reset",
+	/// surfaced either from the longpoll call or from `list_folder/continue`), this performs a full re-list and
+	/// yields it as a complete ``Snapshot`` (`isReset == true`) before resuming monitoring from the new cursor.
+	///
+	/// The stream reports only a coarse status via the ``Snapshot`` values it yields (and, implicitly, the time
+	/// between them while awaiting the longpoll); it does not distinguish "checking for changes" from "applying a
+	/// reset" as separate states. Phase 6 does not need that finer granularity, and it can be added later
+	/// additively (e.g. a status enum wrapping `.checking`/`.snapshot(Snapshot)`) without breaking this API.
 	///
 	/// - Parameters:
 	///    - path: The root path of the folder to monitor. Defaults to the top-level directory.
@@ -49,31 +57,19 @@ public extension Transport {
 		includeNonDownloadableFiles: Bool = true,
 		from cursor: Cursor? = nil
 	) -> AsyncThrowingStream<Snapshot, any Error> {
-		.init(bufferingPolicy: .bufferingNewest(1)) { continuation in
-			Task.detached(
+		// Buffered unbounded rather than `.bufferingNewest(1)`: each snapshot here can be an *incremental* delta
+		// (from `list_folder/continue`), so dropping one because the consumer is momentarily slow would silently
+		// lose changes rather than merely coalesce redundant full-state updates.
+		.init(bufferingPolicy: .unbounded) { continuation in
+			let task = Task.detached(
 				name: "Dropbox Monitor",
 				priority: .background
 			) { [self] in
 				do {
 					var cursor = cursor
 
-					while Task.isCancelled == false {
-						var backoff: UInt64?
-
-						if let cursor {
-							let longpoll = try await longpoll(
-								cursor: cursor,
-								timeout: 240
-							)
-
-							backoff = longpoll.backoff
-
-							guard longpoll.hasChanges else {
-								continue
-							}
-						}
-
-						let response = try await listFolder(
+					func fullRelist() async throws -> Snapshot {
+						try await listFolder(
 							at: path,
 							isRecursive: isRecursive,
 							includeDeleted: includeDeleted,
@@ -81,10 +77,45 @@ public extension Transport {
 							includeMountedFolders: includeMountedFolders,
 							includeNonDownloadableFiles: includeNonDownloadableFiles
 						)
+					}
 
-						if case .terminated = continuation.yield(response) {
+					while Task.isCancelled == false {
+						let snapshot: Snapshot
+						var backoff: UInt64?
+
+						if let currentCursor = cursor {
+							do {
+								let longpollResponse = try await longpoll(
+									cursor: currentCursor,
+									timeout: 240
+								)
+
+								guard longpollResponse.hasChanges else {
+									continue
+								}
+
+								backoff = longpollResponse.backoff
+
+								do {
+									snapshot = try await listFolder(from: currentCursor)
+								}
+								catch ListFolder.Continue.Error.reset {
+									snapshot = try await fullRelist()
+								}
+							}
+							catch ListFolder.Longpoll.Error.reset {
+								snapshot = try await fullRelist()
+							}
+						}
+						else {
+							snapshot = try await fullRelist()
+						}
+
+						if case .terminated = continuation.yield(snapshot) {
 							break
 						}
+
+						cursor = snapshot.cursor
 
 						if let backoff {
 							do {
@@ -94,15 +125,20 @@ public extension Transport {
 								break
 							}
 						}
-
-						cursor = response.cursor
 					}
 
+					continuation.finish()
+				}
+				catch is CancellationError {
 					continuation.finish()
 				}
 				catch {
 					continuation.finish(throwing: error)
 				}
+			}
+
+			continuation.onTermination = { _ in
+				task.cancel()
 			}
 		}
 	}

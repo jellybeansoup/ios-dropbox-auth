@@ -32,26 +32,20 @@ extension Transport {
 	///   - cursor: The cursor representing the current state of the folder.
 	///   - timeout: The maximum number of seconds to wait for changes before timing out.
 	/// - Returns: A `ListFolder.Longpoll.Response` indicating whether changes are present and any backoff suggested.
-	/// - Throws: Errors from the Dropbox API, network failures, or a reset (which is handled as a special case).
+	/// - Throws: Errors from the Dropbox API or network failures, including ``ListFolder/Longpoll/Error/reset``
+	///   if the cursor is no longer valid. Callers that need reset propagation (e.g. ``Transport/monitor``)
+	///   should handle that case explicitly rather than have it masked here.
 	func longpoll(
 		cursor: Cursor,
 		timeout: Int
 	) async throws -> ListFolder.Longpoll.Response {
-		do {
-			return try await response(
-				for: ListFolder.Longpoll.Request(
-					cursor: cursor,
-					timeout: timeout
-				),
-				needsAuthentication: false
-			)
-		}
-		catch ListFolder.Longpoll.Error.reset {
-			return .init(hasChanges: true, backoff: 60)
-		}
-		catch {
-			throw error
-		}
+		try await response(
+			for: ListFolder.Longpoll.Request(
+				cursor: cursor,
+				timeout: timeout
+			),
+			needsAuthentication: false
+		)
 	}
 
 }

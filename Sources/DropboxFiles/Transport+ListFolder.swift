@@ -25,13 +25,17 @@
 import Foundation
 import DropboxAuth
 
-extension Transport {
+public extension Transport {
 
-	/// Retrieves the contents of a Dropbox folder, handling pagination via the `hasMore` property.
+	/// Retrieves the complete contents of a Dropbox folder, handling pagination via the `hasMore` property.
+	///
+	/// The returned ``Snapshot`` always has `isReset` set to `true`, since it represents the complete folder
+	/// state rather than a delta. Use this for the initial listing, after a reset, or for a one-shot refresh
+	/// (e.g. pull-to-refresh).
 	/// - Parameters:
 	///   - path: The path to the Dropbox folder to list.
 	///   - isRecursive: Whether to list folder contents recursively.
-	/// - Returns: A `ListFolder.Response` containing folder entries and the resulting cursor.
+	/// - Returns: A ``Snapshot`` containing the complete set of folder entries and the resulting cursor.
 	/// - Throws: Errors from the Dropbox API or network failures.
 	func listFolder(
 		at path: String,
@@ -64,7 +68,43 @@ extension Transport {
 			currentResponse.hasMore = continueResponse.hasMore
 		}
 
-		return Snapshot(metadata: currentResponse.entries, cursor: currentResponse.cursor)
+		// `isReset` means "complete folder state — replace, don't merge", which is equally true of any
+		// full listing (initial, post-reset, or a one-shot refresh), not only Dropbox-reported resets.
+		return Snapshot(metadata: currentResponse.entries, cursor: currentResponse.cursor, isReset: true)
+	}
+
+}
+
+extension Transport {
+
+	/// Retrieves only the entries that changed (or were removed) since the given cursor, via
+	/// `list_folder/continue`, handling pagination via the `hasMore` property.
+	///
+	/// The returned ``Snapshot`` always has `isReset` set to `false`, since it only represents a delta from
+	/// the previous cursor. Used internally by ``Transport/monitor`` for delta updates; not exposed publicly
+	/// since a bare cursor without an established monitoring session isn't a meaningful entry point for callers.
+	/// - Parameter cursor: The cursor representing the previously observed state of the folder.
+	/// - Returns: A ``Snapshot`` containing the changed/removed entries and the resulting cursor.
+	/// - Throws: Errors from the Dropbox API or network failures, including
+	///   ``ListFolder/Continue/Error/reset`` if the cursor is no longer valid.
+	func listFolder(from cursor: Cursor) async throws -> Snapshot {
+		var currentResponse = try await response(
+			for: ListFolder.Continue.Request(cursor: cursor)
+		)
+
+		while currentResponse.hasMore {
+			let continueResponse = try await response(
+				for: ListFolder.Continue.Request(
+					cursor: currentResponse.cursor
+				)
+			)
+
+			currentResponse.cursor = continueResponse.cursor
+			currentResponse.entries += continueResponse.entries
+			currentResponse.hasMore = continueResponse.hasMore
+		}
+
+		return Snapshot(metadata: currentResponse.entries, cursor: currentResponse.cursor, isReset: false)
 	}
 
 }

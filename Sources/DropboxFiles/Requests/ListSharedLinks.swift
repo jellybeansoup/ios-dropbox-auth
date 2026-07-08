@@ -25,56 +25,50 @@
 import Foundation
 import DropboxAuth
 
-enum ListFolder {
+enum ListSharedLinks {
 
 	struct Request: API.Request {
 
-		typealias Response = ListFolder.Response
-		typealias Error = ListFolder.Error
+		typealias Response = ListSharedLinks.Response
+		typealias Error = ListSharedLinks.Error
 
-		static let endpoint: Endpoint = "/files/list_folder"
+		static let endpoint: Endpoint = "/sharing/list_shared_links"
 		static let method = Method.post
 
-		var path: String
+		/// The path to retrieve links for. If `nil` a list of all shared links for the current user is requested.
+		var path: String? = nil
 
-		var isRecursive: Bool
+		/// The cursor returned by the last `ListSharedLinks.Response`. Used to handle paginated results.
+		var cursor: Cursor? = nil
 
-		var includeDeleted: Bool = false
-
-		var includeHasExplicitSharedMembers: Bool = false
-
-		var includeMountedFolders: Bool = true
-
-		var includeNonDownloadableFiles: Bool = true
+		/// Suppress links to parent folders.
+		var isDirectOnly: Bool? = nil
 
 		private enum CodingKeys: String, CodingKey {
 			case path
-			case isRecursive = "recursive"
-			case includeDeleted = "include_deleted"
-			case includeHasExplicitSharedMembers = "include_has_explicit_shared_members"
-			case includeMountedFolders = "include_mounted_folders"
-			case includeNonDownloadableFiles = "include_non_downloadable_files"
+			case cursor
+			case isDirectOnly = "direct_only"
 		}
 
 	}
 
 	struct Response: API.Response {
 
-		typealias Request = ListFolder.Request
+		typealias Request = ListSharedLinks.Request
 
-		var cursor: Cursor
+		var cursor: Cursor?
 
-		var entries: [any Metadata]
+		var links: [any LinkMetadata]
 
 		var hasMore: Bool
 
 		init(
-			cursor: Cursor,
-			entries: [any Metadata],
+			cursor: Cursor?,
+			links: [any LinkMetadata],
 			hasMore: Bool
 		) {
 			self.cursor = cursor
-			self.entries = entries
+			self.links = links
 			self.hasMore = hasMore
 		}
 
@@ -82,7 +76,7 @@ enum ListFolder {
 
 		private enum CodingKeys: String, CodingKey {
 			case cursor
-			case entries
+			case links
 			case hasMore = "has_more"
 		}
 
@@ -90,8 +84,8 @@ enum ListFolder {
 			let container = try decoder.container(keyedBy: CodingKeys.self)
 
 			self.init(
-				cursor: try container.decode(Cursor.self, forKey: .cursor),
-				entries: try container.decode([MetadataDecodingContainer].self, forKey: .entries).map { $0.value },
+				cursor: try container.decodeIfPresent(Cursor.self, forKey: .cursor),
+				links: try container.decode([LinkMetadataDecodingContainer].self, forKey: .links).map { $0.value },
 				hasMore: try container.decode(Bool.self, forKey: .hasMore)
 			)
 		}
@@ -100,17 +94,17 @@ enum ListFolder {
 
 	enum Error: API.Error {
 
-		typealias Request = ListFolder.Request
+		typealias Request = ListSharedLinks.Request
 
 		case lookup(LookupError)
-		case template(TemplateError)
+		case reset
 
 		init(summary: Summary) throws {
 			switch summary.component {
 			case "path":
 				self = .lookup(try summary.next())
-			case "template_error":
-				self = .template(try summary.next())
+			case "reset":
+				self = .reset
 			default:
 				throw summary
 			}
@@ -119,3 +113,4 @@ enum ListFolder {
 	}
 
 }
+

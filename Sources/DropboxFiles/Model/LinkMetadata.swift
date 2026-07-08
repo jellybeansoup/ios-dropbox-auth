@@ -24,25 +24,28 @@
 
 import Foundation
 
-public protocol Metadata: Hashable, Sendable {
+public protocol LinkMetadata: Hashable, Sendable {
+
+	var url: URL { get }
 
 	var name: String { get }
 
+	var permissions: LinkPermissions { get }
+
 	var pathLower: String? { get }
 
-	var pathDisplay: String? { get }
+	var dateOfExpiry: Date? { get }
 
 }
 
-struct MetadataDecodingContainer: Decodable {
+struct LinkMetadataDecodingContainer: Decodable {
 
 	private enum Tag: String, Decodable {
-		case deleted
 		case file
 		case folder
 	}
 
-	var value: any Metadata
+	var value: any LinkMetadata
 
 	private enum CodingKeys: String, CodingKey {
 		case tag = ".tag"
@@ -51,9 +54,8 @@ struct MetadataDecodingContainer: Decodable {
 	public init(from decoder: Decoder) throws {
 		let container = try decoder.container(keyedBy: CodingKeys.self)
 		value = switch try container.decode(Tag.self, forKey: .tag) {
-		case .deleted: try DeletedMetadata(from: decoder)
-		case .file: try FileMetadata(from: decoder)
-		case .folder: try FolderMetadata(from: decoder)
+		case .file: try FileLinkMetadata(from: decoder)
+		case .folder: try FolderLinkMetadata(from: decoder)
 		}
 	}
 

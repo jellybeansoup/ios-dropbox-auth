@@ -23,29 +23,40 @@
 //
 
 import Foundation
+import DropboxAuth
 
-struct DecodingContainer: Decodable {
+extension Transport {
 
-	private enum Tag: String, Decodable {
-		case deleted
-		case file
-		case folder
-	}
+	/// Retrieves shared links for a Dropbox path, handling pagination via the `hasMore` property.
+	/// - Parameters:
+	///   - path: The path to retrieve links for. Pass `nil` to list all shared links for the account.
+	///   - isDirectOnly: Suppress links to parent folders.
+	/// - Returns: The combined `LinkMetadata` values across all pages of results.
+	/// - Throws: Errors from the Dropbox API or network failures.
+	func listSharedLinks(
+		path: String? = nil,
+		isDirectOnly: Bool? = nil
+	) async throws -> [any LinkMetadata] {
+		var currentResponse = try await response(
+			for: ListSharedLinks.Request(
+				path: path,
+				isDirectOnly: isDirectOnly
+			)
+		)
 
-	var value: any Metadata
+		var links = currentResponse.links
 
-	private enum CodingKeys: String, CodingKey {
-		case tag = ".tag"
-	}
+		while currentResponse.hasMore, let cursor = currentResponse.cursor {
+			currentResponse = try await response(
+				for: ListSharedLinks.Request(
+					cursor: cursor
+				)
+			)
 
-	public init(from decoder: Decoder) throws {
-		let container = try decoder.container(keyedBy: CodingKeys.self)
-		value = switch try container.decode(Tag.self, forKey: .tag) {
-		case .deleted: try DeletedMetadata(from: decoder)
-		case .file: try FileMetadata(from: decoder)
-		case .folder: try FolderMetadata(from: decoder)
+			links += currentResponse.links
 		}
+
+		return links
 	}
 
 }
-

@@ -24,37 +24,55 @@
 
 import Foundation
 
-public protocol Metadata: Hashable, Sendable {
+public struct FolderLinkMetadata: LinkMetadata {
 
-	var name: String { get }
+	public let url: URL
 
-	var pathLower: String? { get }
+	public let name: String
 
-	var pathDisplay: String? { get }
+	public let permissions: LinkPermissions
 
-}
+	public let id: FolderMetadata.ID?
 
-struct MetadataDecodingContainer: Decodable {
+	public let pathLower: String?
 
-	private enum Tag: String, Decodable {
-		case deleted
-		case file
-		case folder
+	public let dateOfExpiry: Date?
+
+	init(
+		url: URL,
+		name: String,
+		permissions: LinkPermissions,
+		id: FolderMetadata.ID?,
+		pathLower: String?,
+		dateOfExpiry: Date?
+	) {
+		self.url = url
+		self.name = name
+		self.permissions = permissions
+		self.id = id
+		self.pathLower = pathLower
+		self.dateOfExpiry = dateOfExpiry
 	}
 
-	var value: any Metadata
+	// Codable
 
 	private enum CodingKeys: String, CodingKey {
-		case tag = ".tag"
+		case url
+		case name
+		case permissions = "link_permissions"
+		case id
+		case pathLower = "path_lower"
+		case dateOfExpiry = "expires"
 	}
 
 	public init(from decoder: Decoder) throws {
 		let container = try decoder.container(keyedBy: CodingKeys.self)
-		value = switch try container.decode(Tag.self, forKey: .tag) {
-		case .deleted: try DeletedMetadata(from: decoder)
-		case .file: try FileMetadata(from: decoder)
-		case .folder: try FolderMetadata(from: decoder)
-		}
+		self.url = try container.decode(URL.self, forKey: .url)
+		self.name = try container.decode(String.self, forKey: .name)
+		self.permissions = try container.decode(LinkPermissions.self, forKey: .permissions)
+		self.id = try container.decodeIfPresent(FolderMetadata.ID.self, forKey: .id)
+		self.pathLower = try container.decodeIfPresent(String.self, forKey: .pathLower)
+		self.dateOfExpiry = try container.decodeIfPresent(Timestamp.self, forKey: .dateOfExpiry)?.rawValue
 	}
 
 }

@@ -75,7 +75,7 @@ extension ListFolder {
 
 				self.init(
 					cursor: try container.decode(Cursor.self, forKey: .cursor),
-					entries: try container.decode([DecodingContainer].self, forKey: .entries).map { $0.value },
+					entries: try container.decode([MetadataDecodingContainer].self, forKey: .entries).map { $0.value },
 					hasMore: try container.decode(Bool.self, forKey: .hasMore)
 				)
 			}

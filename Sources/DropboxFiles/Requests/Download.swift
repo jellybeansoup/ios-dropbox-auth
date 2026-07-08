@@ -25,20 +25,63 @@
 import Foundation
 import DropboxAuth
 
-public enum LookupError: String, Error, API.Error {
+public enum Download {
 
-	case malformedPath = "malformed_path"
+	public struct Request: API.Request {
 
-	case notFound = "not_found"
+		public typealias Response = Download.Response
+		public typealias Error = Download.Error
 
-	case notFile = "not_file"
+		public static let endpoint: Endpoint = .content("/files/download")
+		public static let method = Method.post
+		public static let parameterPlacement = ParameterPlacement.header
 
-	case notFolder = "not_folder"
+		/// The path of the file to download.
+		public var path: String
 
-	case restrictedContent = "restricted_content"
+		public init(path: String) {
+			self.path = path
+		}
 
-	case unsupportedContentType = "unsupported_content_type"
+	}
 
-	case locked
+	public struct Response: API.Response {
+
+		public typealias Request = Download.Request
+
+		/// Metadata for the downloaded file, as returned in the `Dropbox-API-Result` response header.
+		public var metadata: FileMetadata
+
+		init(metadata: FileMetadata) {
+			self.metadata = metadata
+		}
+
+		// MARK: Decodable
+
+		public init(from decoder: Decoder) throws {
+			self.init(metadata: try FileMetadata(from: decoder))
+		}
+
+	}
+
+	public enum Error: API.Error {
+
+		public typealias Request = Download.Request
+
+		case path(LookupError)
+		case unsupportedFile
+
+		public init(summary: Summary) throws {
+			switch summary.component {
+			case "path":
+				self = .path(try summary.next())
+			case "unsupported_file":
+				self = .unsupportedFile
+			default:
+				throw summary
+			}
+		}
+
+	}
 
 }

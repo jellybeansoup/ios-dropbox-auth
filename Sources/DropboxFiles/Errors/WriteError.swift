@@ -25,7 +25,7 @@
 import Foundation
 import DropboxAuth
 
-enum WriteConflictError: String, Error, API.Error {
+public enum WriteConflictError: String, Error, API.Error {
 
 	case file
 
@@ -35,7 +35,7 @@ enum WriteConflictError: String, Error, API.Error {
 
 }
 
-enum WriteError: Error, API.Error {
+public enum WriteError: Error, API.Error {
 
 	case malformedPath(String?)
 
@@ -49,7 +49,7 @@ enum WriteError: Error, API.Error {
 
 	case tooManyWriteOperations
 
-	init(summary: Summary) throws {
+	public init(summary: Summary) throws {
 		switch summary.component {
 		case "malformed_path":
 			self = .malformedPath(nil)

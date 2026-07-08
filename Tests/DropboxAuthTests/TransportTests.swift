@@ -109,6 +109,87 @@ import Testing
 		#expect(response == Dummy.Response(foo: "bar"))
 	}
 
+	@Test func urlRequestForSignsWithCurrentTokenWhenNotExpired() async throws {
+		struct UnexpectedRefresh: Stub {
+
+			static func stub(for request: URLRequest) throws -> String {
+				Issue.record("Unexpectedly attempted to refresh the token.")
+				return "{}"
+			}
+
+		}
+
+		struct Dummy: API.Request, Encodable, Sendable {
+
+			struct Response: API.Response, Hashable {
+				typealias Request = Dummy
+				let foo: String
+			}
+
+			enum Error: String, API.Error {
+				case example
+			}
+
+			static let endpoint: API.Endpoint = .api("/echo")
+			static let method: API.Method = .post
+
+		}
+
+		let token = AccessToken.mock(accessToken: "current_token", expiryDate: .init(timeIntervalSinceNow: 3600))
+		let transport = Transport(
+			authManager: .init(key: "mock", store: .mock(token: token)),
+			accountID: token.accountID,
+			urlSession: .stubbed(with: UnexpectedRefresh.self)
+		)
+
+		let urlRequest = try await transport.urlRequest(for: Dummy())
+
+		#expect(urlRequest.url?.absoluteString == "https://api.dropboxapi.com/2/echo")
+		#expect(urlRequest.value(forHTTPHeaderField: "Authorization") == "Bearer current_token")
+	}
+
+	@Test func urlRequestForRefreshesExpiredTokenBeforeSigning() async throws {
+		struct RefreshResponse: Stub {
+
+			static func stub(for request: URLRequest) throws -> String {
+				"""
+				{
+					"access_token": "refreshed_token",
+					"expires_in": 3600
+				}
+				"""
+			}
+
+		}
+
+		struct Dummy: API.Request, Encodable, Sendable {
+
+			struct Response: API.Response, Hashable {
+				typealias Request = Dummy
+				let foo: String
+			}
+
+			enum Error: String, API.Error {
+				case example
+			}
+
+			static let endpoint: API.Endpoint = .api("/echo")
+			static let method: API.Method = .post
+
+		}
+
+		let token = AccessToken.mock(accessToken: "expired_token")
+		let transport = Transport(
+			authManager: .init(key: "mock", store: .mock(token: token)),
+			accountID: token.accountID,
+			urlSession: .stubbed(with: RefreshResponse.self)
+		)
+
+		let urlRequest = try await transport.urlRequest(for: Dummy())
+
+		#expect(urlRequest.value(forHTTPHeaderField: "Authorization") == "Bearer refreshed_token")
+	}
+
 	@Test func withRetryRefreshesOnExpired() async throws {
 		struct Response: Stub {
 

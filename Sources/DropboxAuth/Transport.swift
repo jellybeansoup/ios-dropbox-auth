@@ -65,6 +65,24 @@ public class Transport: @unchecked Sendable {
 		}
 	}
 
+	/// Builds a signed `URLRequest` for the given request, refreshing the actor’s current token first if it has expired.
+	///
+	/// Use this for requests whose response can’t be handled by `response(for:)` — such as content-endpoint requests
+	/// (upload/download/thumbnail) that return raw bytes rather than a JSON body — where the caller executes the
+	/// request itself (e.g. with a background `URLSession`) and later parses the result using the request’s own
+	/// response-parsing API.
+	/// - Parameter request: The API request to sign.
+	/// - Returns: A signed `URLRequest`, ready to be executed.
+	/// - Throws: Errors from token refresh, or from encoding the request.
+	public func urlRequest<Request: API.Request>(for request: Request) async throws -> URLRequest {
+		let token = try await authManager.refresh(
+			authManager.store.accessToken(for: accountID),
+			urlSession: urlSession
+		)
+
+		return try request.urlRequest(signedWith: token)
+	}
+
 	/// Runs an operation and retries once after refreshing the token if it has expired.
 	///
 	/// If the operation throws `AuthenticationError.expiredAccessToken`, the token is refreshed

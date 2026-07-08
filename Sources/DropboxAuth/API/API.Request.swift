@@ -121,4 +121,23 @@ public extension API.Request {
 		}
 	}
 
+	/// Parses a response for a content-endpoint request whose success payload is not JSON in the response body,
+	/// but instead arrives as JSON in the `Dropbox-API-Result` response header (with the body holding raw content,
+	/// such as downloaded file bytes or a thumbnail image) — used by requests such as download and get-thumbnail.
+	///
+	/// When the header is absent, `data` is assumed to hold a JSON error payload and is parsed exactly as
+	/// `response(from:)` does, surfacing this request's typed `Error` (or a decoding error).
+	/// - Parameters:
+	///   - data: The raw response body.
+	///   - httpResponse: The HTTP response, whose `Dropbox-API-Result` header carries the metadata JSON on success.
+	/// - Returns: The decoded `Response`.
+	/// - Throws: The typed API `Error`, or a decoding error.
+	func response(from data: Data, httpResponse: HTTPURLResponse) throws -> Response {
+		guard let result = httpResponse.value(forHTTPHeaderField: "Dropbox-API-Result") else {
+			return try response(from: data)
+		}
+
+		return try JSONDecoder().decode(Response.self, from: Data(result.utf8))
+	}
+
 }

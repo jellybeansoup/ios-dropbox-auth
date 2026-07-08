@@ -10,7 +10,7 @@ import Testing
 
 		do {
 			let timestamp = try JSONDecoder().decode(Timestamp.self, from: jsonData)
-			let expectedDate = Date(timeIntervalSince1970: 1577829600) // 2020-01-01T09:00:00Z
+			let expectedDate = Date(timeIntervalSince1970: 1577869200) // 2020-01-01T09:00:00Z
 			#expect(timestamp.rawValue == expectedDate)
 		} catch {
 			Issue.record("Failed to decode timestamp: \(error)")
@@ -27,7 +27,7 @@ import Testing
 	}
 
 	@Test func encodeToString() {
-		let date = Date(timeIntervalSince1970: 1577829600) // 2020-01-01T09:00:00Z
+		let date = Date(timeIntervalSince1970: 1577869200) // 2020-01-01T09:00:00Z
 		let timestamp = Timestamp(rawValue: date)
 
 		do {

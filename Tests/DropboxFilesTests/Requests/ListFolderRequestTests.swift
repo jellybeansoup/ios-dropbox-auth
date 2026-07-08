@@ -109,8 +109,8 @@ import Testing
 			pathLower: "/homework/math/prime_numbers.txt",
 			pathDisplay: "/Homework/math/Prime_Numbers.txt",
 			numberOfBytes: 7212,
-			dateModifiedOnClient: Date(timeIntervalSince1970: 1431409838), // 2015-05-12T15:50:38Z
-			dateModifiedOnServer: Date(timeIntervalSince1970: 1431409838), // 2015-05-12T15:50:38Z
+			dateModifiedOnClient: Date(timeIntervalSince1970: 1431445838), // 2015-05-12T15:50:38Z
+			dateModifiedOnServer: Date(timeIntervalSince1970: 1431445838), // 2015-05-12T15:50:38Z
 			contentHash: .init(rawValue: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
 		))
 		#expect(response.entries[1] as? FolderMetadata == FolderMetadata(

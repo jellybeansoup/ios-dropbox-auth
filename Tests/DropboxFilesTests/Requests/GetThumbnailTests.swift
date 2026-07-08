@@ -49,8 +49,8 @@ import Testing
 			pathLower: "/hello/world.gif",
 			pathDisplay: "/hello/world.gif",
 			numberOfBytes: 7212,
-			dateModifiedOnClient: Date(timeIntervalSince1970: 1431409838),
-			dateModifiedOnServer: Date(timeIntervalSince1970: 1431409838),
+			dateModifiedOnClient: Date(timeIntervalSince1970: 1431445838),
+			dateModifiedOnServer: Date(timeIntervalSince1970: 1431445838),
 			contentHash: .init(rawValue: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
 		))
 	}

@@ -32,9 +32,16 @@ import AppKit
 /// never presents any UI, it only inspects `NSApplication.shared.mainWindow` (nil in a test host)
 /// and falls back to constructing a fresh, unshown `NSWindow`.
 ///
-/// The rest of `AuthManager+InApp.swift` (`authenticateLocally`) constructs and starts a real
-/// `ASWebAuthenticationSession`, which presents interactive UI and waits on user action — that's
-/// untestable-at-this-layer without a source-level injection point for the session itself.
+/// The rest of `AuthManager+InApp.swift` (`authenticateLocally`) constructs a real
+/// `WebAuthenticationSession`/`ASWebAuthenticationSession` — genuinely untestable in this host for
+/// two independent reasons: it presents interactive UI and waits on user action, and (found while
+/// investigating an injection seam for this task) `WebAuthenticationSession.init` asserts that
+/// `Bundle.main` has the app's custom URL scheme configured via `CFBundleURLTypes`, which the
+/// `swift test` executable's bundle never has — so the assertion trips immediately regardless of
+/// any injection seam on the session itself. See `WebAuthenticationSessionTests` for the seam that
+/// *is* reachable: the completion-handler and `start()`-result mapping logic has been extracted
+/// into two `Bundle`-independent static functions on `WebAuthenticationSession`, which are fully
+/// unit-tested there without ever constructing a session.
 @Suite struct AuthManagerInAppTests {
 
 	@MainActor

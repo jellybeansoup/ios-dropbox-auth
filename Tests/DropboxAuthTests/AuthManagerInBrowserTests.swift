@@ -28,13 +28,15 @@ import Foundation
 import Testing
 
 /// Covers the URL-scheme redirect side of browser-based authentication: constructing the
-/// hand-off URL and parsing the app's return redirect (`handle(_:)`).
+/// hand-off URL and parsing the app's return redirect (`handle(_:)`), plus the platform
+/// `authenticateInBrowser()` overloads via their `openInSystemBrowser(opener:)` injection seam.
 ///
-/// Not covered here: the platform `authenticateInBrowser()` overloads (UIKit/AppKit), which call
-/// straight through to `UIApplication.open`/`NSWorkspace.open` with no injection seam — calling
-/// them in a test would actually launch the system browser, an untestable-at-this-layer side
-/// effect. `handle(_:)`'s network path has no `URLSession` injection point either, so it's
-/// exercised via `GlobalURLProtocolStub`, which intercepts `.shared` for the duration of a test.
+/// The public `authenticateInBrowser()` overloads (UIKit/AppKit) call straight through to
+/// `UIApplication.open`/`NSWorkspace.open`, which would actually launch the system browser if
+/// exercised directly — so they're tested via `openInSystemBrowser(opener:)`, the internal seam
+/// they delegate to, which lets a fake opener stand in for the real one. `handle(_:)`'s network
+/// path has no such internal seam, so it's exercised via `GlobalURLProtocolStub`, which intercepts
+/// `.shared` for the duration of a test.
 @Suite(.serialized) struct AuthManagerInBrowserTests {
 
 	private static func store() -> AccessTokenStore {
@@ -70,21 +72,23 @@ import Testing
 	// MARK: handle(_:) async
 
 	@Test func handleExchangesACodeForAToken() async throws {
+		struct ExchangeResponse: Stub {
+			static func stub(for request: URLRequest) throws -> String {
+				"""
+				{
+					"access_token": "exchanged_token",
+					"expires_in": 3600,
+					"account_id": "account_1234",
+					"refresh_token": "refresh_1234"
+				}
+				"""
+			}
+		}
+
 		let authManager = AuthManager(key: "mock", redirectURI: nil, store: Self.store())
 		let url = try #require(URL(string: "db-mock://2/token?code=auth_code_1234"))
 
-		let token = try await GlobalURLProtocolStub.withStub({ _ in
-			"""
-			{
-				"access_token": "exchanged_token",
-				"expires_in": 3600,
-				"account_id": "account_1234",
-				"refresh_token": "refresh_1234"
-			}
-			"""
-		}) {
-			try await authManager.handle(url)
-		}
+		let token = try await authManager.handle(url, urlSession: .stubbed(with: ExchangeResponse.self))
 
 		#expect(token.accessToken == "exchanged_token")
 		#expect(token.accountID == "account_1234")
@@ -92,12 +96,43 @@ import Testing
 	}
 
 	@Test func handlePropagatesOAuthErrorFromQuery() async throws {
+		struct UnexpectedNetworkCall: Stub {
+			static func stub(for request: URLRequest) throws -> String {
+				Issue.record("Unexpectedly attempted to exchange a code — the query has no code, only an error.")
+				return "{}"
+			}
+		}
+
 		let authManager = AuthManager(key: "mock", redirectURI: nil, store: Self.store())
 		let url = try #require(URL(string: "db-mock://2/token?error=access_denied"))
 
 		await #expect(throws: OAuthError.accessDenied) {
-			_ = try await authManager.handle(url)
+			_ = try await authManager.handle(url, urlSession: .stubbed(with: UnexpectedNetworkCall.self))
 		}
+	}
+
+	@Test func handleUsesTheSharedURLSessionByDefault() async throws {
+		// Confirms the public `handle(_:)` overload really does default to `.shared` (rather than,
+		// say, some other session), by intercepting `.shared` globally — the one case where
+		// `GlobalURLProtocolStub` is still needed, since there's no seam on the public overload
+		// itself to inject a session directly.
+		let authManager = AuthManager(key: "mock", redirectURI: nil, store: Self.store())
+		let url = try #require(URL(string: "db-mock://2/token?code=auth_code_default_session"))
+
+		let token = try await GlobalURLProtocolStub.withStub({ _ in
+			"""
+			{
+				"access_token": "default_session_token",
+				"expires_in": 3600,
+				"account_id": "account_default_session",
+				"refresh_token": "refresh_default_session"
+			}
+			"""
+		}) {
+			try await authManager.handle(url)
+		}
+
+		#expect(token.accessToken == "default_session_token")
 	}
 
 	@Test func handleThrowsInvalidQueryWhenNeitherCodeNorErrorIsPresent() async throws {
@@ -173,5 +208,49 @@ import Testing
 			_ = try result.get()
 		}
 	}
+
+	// MARK: openInSystemBrowser(opener:)
+
+#if canImport(UIKit)
+	@MainActor
+	@Test func openInSystemBrowserPassesTheAuthenticationURLToTheOpener() {
+		let authManager = AuthManager(key: "mock", redirectURI: nil, store: Self.store())
+		let expectedURL = authManager.authenticationURL
+
+		let handled = authManager.openInSystemBrowser { url in url == expectedURL }
+
+		#expect(handled)
+	}
+
+	@MainActor
+	@Test func openInSystemBrowserReturnsFalseWhenTheOpenerFails() {
+		let authManager = AuthManager(key: "mock", redirectURI: nil, store: Self.store())
+
+		let handled = authManager.openInSystemBrowser { _ in false }
+
+		#expect(handled == false)
+	}
+#endif
+
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
+	@MainActor
+	@Test func openInSystemBrowserPassesTheAuthenticationURLToTheOpenerOnAppKit() {
+		let authManager = AuthManager(key: "mock", redirectURI: nil, store: Self.store())
+		let expectedURL = authManager.authenticationURL
+
+		let handled = authManager.openInSystemBrowser { url in url == expectedURL }
+
+		#expect(handled)
+	}
+
+	@MainActor
+	@Test func openInSystemBrowserReturnsFalseWhenTheOpenerFailsOnAppKit() {
+		let authManager = AuthManager(key: "mock", redirectURI: nil, store: Self.store())
+
+		let handled = authManager.openInSystemBrowser { _ in false }
+
+		#expect(handled == false)
+	}
+#endif
 
 }

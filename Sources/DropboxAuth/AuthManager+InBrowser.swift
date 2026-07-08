@@ -50,28 +50,7 @@ public extension AuthManager {
 	func handle(
 		_ url: URL
 	) async throws -> AccessToken {
-		let parameters = url.query?.queryParameters
-
-		if let code = parameters?["code"] {
-			let token = try await URLSession.shared.token(
-				with: ExchangeRequest(
-					appKey: appKey,
-					code: code,
-					verifier: pckeCode.verifier,
-					redirectURI: redirectURI.absoluteString
-				)
-			)
-
-			try store.save(token)
-
-			return token
-		}
-		else if let rawValue = parameters?["error"], let error = OAuthError(rawValue: rawValue) {
-			throw error
-		}
-		else {
-			throw BrowserAuthenticationError.invalidQuery(url.query)
-		}
+		try await handle(url, urlSession: .shared)
 	}
 
 	/// Try to handle a redirect back into the application
@@ -94,6 +73,42 @@ public extension AuthManager {
 
 }
 
+extension AuthManager {
+
+	/// Internal seam used by tests to inject a stubbed `URLSession` in place of `.shared`.
+	/// Production callers always reach this through the public `handle(_:)` overload above, which
+	/// always passes `.shared` — so production behavior is unchanged.
+	@discardableResult
+	func handle(
+		_ url: URL,
+		urlSession: URLSession
+	) async throws -> AccessToken {
+		let parameters = url.query?.queryParameters
+
+		if let code = parameters?["code"] {
+			let token = try await urlSession.token(
+				with: ExchangeRequest(
+					appKey: appKey,
+					code: code,
+					verifier: pckeCode.verifier,
+					redirectURI: redirectURI.absoluteString
+				)
+			)
+
+			try store.save(token)
+
+			return token
+		}
+		else if let rawValue = parameters?["error"], let error = OAuthError(rawValue: rawValue) {
+			throw error
+		}
+		else {
+			throw BrowserAuthenticationError.invalidQuery(url.query)
+		}
+	}
+
+}
+
 #if canImport(UIKit)
 import UIKit
 
@@ -108,16 +123,37 @@ public extension AuthManager {
 	@MainActor
 	@discardableResult
 	func authenticateInBrowser() -> Bool {
+		openInSystemBrowser(opener: Self.defaultURLOpener)
+	}
+
+}
+
+extension AuthManager {
+
+	/// The production URL-opener: hands the URL to `UIApplication`, identical to what
+	/// `authenticateInBrowser()` did directly before the injection seam was introduced.
+	@MainActor
+	static let defaultURLOpener: (URL) -> Bool = { url in
 		guard
 			let application = UIApplication.value(forKey: "sharedApplication") as? UIApplication,
-			application.canOpenURL(authenticationURL!)
+			application.canOpenURL(url)
 		else {
 			return false
 		}
 
-		application.open(authenticationURL!, options: [:], completionHandler: nil)
+		application.open(url, options: [:], completionHandler: nil)
 
 		return true
+	}
+
+	/// Internal seam used by tests to inject a fake URL-opener in place of `UIApplication`, whose
+	/// real `.open(_:)` would launch the live system browser to a real Dropbox OAuth URL.
+	/// Production callers always reach this through the public `authenticateInBrowser()` overload
+	/// above, which always passes `defaultURLOpener` — so production behavior is unchanged.
+	@MainActor
+	@discardableResult
+	func openInSystemBrowser(opener: (URL) -> Bool) -> Bool {
+		opener(authenticationURL!)
 	}
 
 }
@@ -137,15 +173,36 @@ public extension AuthManager {
 	@MainActor
 	@discardableResult
 	func authenticateInBrowser() -> Bool {
+		openInSystemBrowser(opener: Self.defaultURLOpener)
+	}
+
+}
+
+extension AuthManager {
+
+	/// The production URL-opener: hands the URL to `NSWorkspace`, identical to what
+	/// `authenticateInBrowser()` did directly before the injection seam was introduced.
+	@MainActor
+	static let defaultURLOpener: (URL) -> Bool = { url in
 		guard
 			let application = NSWorkspace.value(forKey: "sharedWorkspace") as? NSWorkspace
 		else {
 			return false
 		}
 
-		application.open(authenticationURL!)
+		application.open(url)
 
 		return true
+	}
+
+	/// Internal seam used by tests to inject a fake URL-opener in place of `NSWorkspace`, whose
+	/// real `.open(_:)` would launch the live system browser to a real Dropbox OAuth URL.
+	/// Production callers always reach this through the public `authenticateInBrowser()` overload
+	/// above, which always passes `defaultURLOpener` — so production behavior is unchanged.
+	@MainActor
+	@discardableResult
+	func openInSystemBrowser(opener: (URL) -> Bool) -> Bool {
+		opener(authenticationURL!)
 	}
 
 }

@@ -54,25 +54,7 @@ class WebAuthenticationSession: NSObject {
 			url: authManager.authenticationURL!,
 			callbackURLScheme: "db-\(authManager.appKey)",
 			completionHandler: { [weak authManager, completion] url, error in
-				do {
-					if let error {
-						throw error
-					}
-					else {
-						guard let authManager else {
-							throw Error.missingAuthManager
-						}
-
-						guard let url else {
-							throw Error.missingURL
-						}
-
-						authManager.handle(url, completion: completion)
-					}
-				}
-				catch {
-					completion(.failure(error))
-				}
+				WebAuthenticationSession.handleCompletion(url: url, error: error, authManager: authManager, completion: completion)
 			}
 		)
 
@@ -83,7 +65,50 @@ class WebAuthenticationSession: NSObject {
 	/// Starts the web authentication session.
 	/// - Throws: An error if the session cannot be started.
 	func start() throws {
-		if session.start() == false {
+		try WebAuthenticationSession.throwIfFailedToStart(session.start())
+	}
+
+	/// Maps an `ASWebAuthenticationSession` completion callback (`url`, `error`) to this type's
+	/// `CompletionHandler`, exactly as `init` above wires it up.
+	///
+	/// - Important: Extracted as a `Bundle`/assertion-independent pure function (taking
+	///   `authManager` as a plain, already-weakened optional rather than capturing it) specifically
+	///   so it's unit-testable: constructing a real `WebAuthenticationSession` trips the
+	///   scheme-configuration assertion in `init` on any host — like the unit test bundle — whose
+	///   `Bundle.main` has no `CFBundleURLTypes` entry, regardless of the URL/error values under
+	///   test. This function has no such dependency, so it can be exercised directly.
+	static func handleCompletion(
+		url: URL?,
+		error: Swift.Error?,
+		authManager: AuthManager?,
+		completion: @escaping CompletionHandler
+	) {
+		do {
+			if let error {
+				throw error
+			}
+			else {
+				guard let authManager else {
+					throw Error.missingAuthManager
+				}
+
+				guard let url else {
+					throw Error.missingURL
+				}
+
+				authManager.handle(url, completion: completion)
+			}
+		}
+		catch {
+			completion(.failure(error))
+		}
+	}
+
+	/// The `session.start()` → `throws` translation, exactly as `start()` above uses it. Extracted
+	/// as a pure function for the same reason as `handleCompletion(...)` above: directly testable
+	/// without constructing a real session.
+	static func throwIfFailedToStart(_ started: Bool) throws {
+		if started == false {
 			throw Error.unableToStart
 		}
 	}

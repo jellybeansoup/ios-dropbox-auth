@@ -33,10 +33,18 @@ public extension API {
 
 		typealias Endpoint = API.Endpoint
 		typealias Method = API.Method
+		typealias ParameterPlacement = API.ParameterPlacement
 
 		static var endpoint: Endpoint { get }
 
 		static var method: Method { get }
+
+		/// Where this request's encoded parameters are placed on the outgoing `URLRequest`.
+		///
+		/// Defaults to `.body`, matching the JSON-body behaviour used by most Dropbox API requests.
+		/// Content endpoints (`content.dropboxapi.com`) should declare `.header` instead, which places
+		/// the encoded parameters in the `Dropbox-API-Arg` header and leaves the HTTP body untouched.
+		static var parameterPlacement: ParameterPlacement { get }
 
 		func configure(_ urlRequest: inout URLRequest) throws
 
@@ -48,6 +56,8 @@ public extension API.Request {
 
 	func configure(_ urlRequest: inout URLRequest) {}
 
+	static var parameterPlacement: ParameterPlacement { .body }
+
 	var urlRequest: URLRequest {
 		get throws {
 			var urlRequest = URLRequest(url: try Self.endpoint.url)
@@ -55,8 +65,17 @@ public extension API.Request {
 
 			let encoder = JSONEncoder()
 			encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-			urlRequest.httpBody = try encoder.encode(self)
-			urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+			let json = try encoder.encode(self)
+
+			switch Self.parameterPlacement {
+			case .body:
+				urlRequest.httpBody = json
+				urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+			case .header:
+				let jsonString = String(decoding: json, as: UTF8.self)
+				urlRequest.setValue(API.headerArgEncodedJSONString(jsonString), forHTTPHeaderField: "Dropbox-API-Arg")
+			}
 
 			try configure(&urlRequest)
 

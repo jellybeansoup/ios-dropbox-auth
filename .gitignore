@@ -25,3 +25,4 @@ xcuserdata
 *.hmap
 *.ipa
 .swiftpm
+/.build

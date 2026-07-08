@@ -74,4 +74,55 @@ struct APIErrorResponseTests {
 			#expect(error is DecodingError)
 		}
 	}
+
+	// MARK: init(summary:decoder:)
+
+	/// An `API.Error` that overrides the decoder-aware initialiser to pull an extra payload out of the
+	/// full error response body — the extension point `CreateSharedLinkWithSettings.Error` relies on to
+	/// decode `shared_link_already_exists`'s nested link metadata.
+	private struct MockErrorWithPayload: API.Error {
+		var payload: String?
+
+		init(summary: Summary) throws {
+			guard summary.component == "example" else { throw summary }
+			self.payload = nil
+		}
+
+		init(summary: Summary, decoder: Decoder) throws {
+			guard summary.component == "example" else { throw summary }
+
+			enum CodingKeys: String, CodingKey {
+				case error
+			}
+			enum PayloadCodingKeys: String, CodingKey {
+				case payload
+			}
+
+			let container = try decoder.container(keyedBy: CodingKeys.self)
+			let payloadContainer = try container.nestedContainer(keyedBy: PayloadCodingKeys.self, forKey: .error)
+			self.payload = try payloadContainer.decodeIfPresent(String.self, forKey: .payload)
+		}
+	}
+
+	@Test func defaultDecoderHookForwardsToSummaryInit() throws {
+		// MockError never overrides init(summary:decoder:), so the default extension implementation must
+		// forward to init(summary:) unchanged — existing error decoding for other requests must be unaffected.
+		let json = Data(#"{ "error_summary": "example", "error": { ".tag": "example" } }"#.utf8)
+		let response = try JSONDecoder().decode(API.ErrorResponse<MockError>.self, from: json)
+		#expect(response.error == .example)
+	}
+
+	@Test func decoderHookDecodesNestedPayload() throws {
+		let json = Data(#"""
+		{ "error_summary": "example", "error": { ".tag": "example", "payload": "hello" } }
+		"""#.utf8)
+		let response = try JSONDecoder().decode(API.ErrorResponse<MockErrorWithPayload>.self, from: json)
+		#expect(response.error.payload == "hello")
+	}
+
+	@Test func decoderHookHandlesMissingNestedPayload() throws {
+		let json = Data(#"{ "error_summary": "example", "error": { ".tag": "example" } }"#.utf8)
+		let response = try JSONDecoder().decode(API.ErrorResponse<MockErrorWithPayload>.self, from: json)
+		#expect(response.error.payload == nil)
+	}
 }

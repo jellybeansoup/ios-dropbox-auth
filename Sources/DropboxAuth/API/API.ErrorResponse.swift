@@ -23,7 +23,7 @@ extension API {
 			}
 
 			do {
-				self.error = try Error(summary: summary)
+				self.error = try Error(summary: summary, decoder: decoder)
 			}
 			catch is API.Error.Summary {
 				throw summary

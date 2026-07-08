@@ -42,4 +42,33 @@ import Testing
 		#expect(AuthenticationError.expiredAccessToken.recoverySuggestion == "Please sign in again.")
 	}
 
+	// MARK: init(summary:)
+
+	@Test func initWithSummaryMatchingKnownCase() throws {
+		let summary = API.ErrorSummary(components: ["expired_access_token"])
+		#expect(try AuthenticationError(summary: summary) == .expiredAccessToken)
+	}
+
+	@Test func initWithSummaryMappingInvalidGrantToInvalidAccessToken() throws {
+		// The OAuth token endpoint reports a revoked/invalid refresh token as `invalid_grant`,
+		// which this maps onto the existing `invalidAccessToken` case rather than treating it as
+		// a distinct, unrecognised error.
+		let summary = API.ErrorSummary(components: ["invalid_grant"])
+		#expect(try AuthenticationError(summary: summary) == .invalidAccessToken)
+	}
+
+	@Test func initWithUnrecognizedSummaryThrows() {
+		let summary = API.ErrorSummary(components: ["something_else_entirely"])
+		#expect(throws: summary) {
+			_ = try AuthenticationError(summary: summary)
+		}
+	}
+
+	@Test func initWithEmptySummaryThrows() {
+		let summary = API.ErrorSummary(components: [])
+		#expect(throws: summary) {
+			_ = try AuthenticationError(summary: summary)
+		}
+	}
+
 }

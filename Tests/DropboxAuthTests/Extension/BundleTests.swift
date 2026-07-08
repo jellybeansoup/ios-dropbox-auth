@@ -55,6 +55,31 @@ import Testing
 		#expect(hasConfiguredScheme == false)
 	}
 
+	@Test func hasConfiguredSchemeWithMissingURLTypesKey() {
+		// `urlTypes` is left nil, so `object(forInfoDictionaryKey:)` returns nil and the top-level
+		// guard fails, exercising the early-return branch (as opposed to an empty array, which
+		// still satisfies the guard).
+		let bundle = MockBundle()
+
+		let hasConfiguredScheme = bundle.hasConfiguredScheme("db-test")
+
+		#expect(hasConfiguredScheme == false)
+	}
+
+	@Test func hasConfiguredSchemeSkipsEntriesMissingSchemesKeyThenMatchesLater() {
+		// The first URL type dictionary has no `CFBundleURLSchemes` key, forcing the inner guard's
+		// `continue` branch, before a later entry provides the matching scheme.
+		let bundle = MockBundle()
+		bundle.urlTypes = [
+			["CFBundleName": "Untyped"],
+			["CFBundleURLSchemes": ["db-test"]],
+		]
+
+		let hasConfiguredScheme = bundle.hasConfiguredScheme("db-test")
+
+		#expect(hasConfiguredScheme)
+	}
+
 	@Test func hasApplicationQueriesSchemeWithConfiguredScheme() {
 		let bundle = MockBundle()
 		bundle.applicationQueriesSchemes = ["dbapi-2"]
@@ -76,6 +101,16 @@ import Testing
 	@Test func hasApplicationQueriesSchemeWithDifferentScheme() {
 		let bundle = MockBundle()
 		bundle.applicationQueriesSchemes = ["other-scheme"]
+
+		let hasApplicationQueriesScheme = bundle.hasApplicationQueriesScheme
+
+		#expect(hasApplicationQueriesScheme == false)
+	}
+
+	@Test func hasApplicationQueriesSchemeWithMissingKey() {
+		// `applicationQueriesSchemes` is left nil, so the top-level guard fails (as opposed to an
+		// empty array, which still satisfies the guard).
+		let bundle = MockBundle()
 
 		let hasApplicationQueriesScheme = bundle.hasApplicationQueriesScheme
 

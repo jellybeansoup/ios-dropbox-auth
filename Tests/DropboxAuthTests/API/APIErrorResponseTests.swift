@@ -125,4 +125,21 @@ struct APIErrorResponseTests {
 		let response = try JSONDecoder().decode(API.ErrorResponse<MockErrorWithPayload>.self, from: json)
 		#expect(response.error.payload == nil)
 	}
+
+	@Test func decoderHookNonSummaryErrorIsRethrownUnchanged() {
+		// When `init(summary:decoder:)` throws something other than `API.Error.Summary` (here, a
+		// `DecodingError` because the `error` key is missing entirely), `ErrorResponse.init` must
+		// rethrow that error as-is rather than substituting the outer `error_summary`.
+		let json = Data(#"{ "error_summary": "example" }"#.utf8)
+		do {
+			let _ = try JSONDecoder().decode(API.ErrorResponse<MockErrorWithPayload>.self, from: json)
+			Issue.record("Expected the nested-container DecodingError to be rethrown")
+		}
+		catch is DecodingError {
+			// Expected.
+		}
+		catch {
+			Issue.record("Expected DecodingError, got \(type(of: error))")
+		}
+	}
 }

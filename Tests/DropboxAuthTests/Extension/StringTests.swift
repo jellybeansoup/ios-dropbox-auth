@@ -78,4 +78,15 @@ struct StringTests {
         #expect(parameters["key1"] == "value1")
         #expect(parameters["key2"] == "true")
     }
+
+    @Test func queryParametersSkipsEmptyPair() async throws {
+        // A pair consisting only of "=" splits into zero components (both sides are empty and
+        // trimmed), which must be skipped rather than recorded as a parameter.
+        let urlString = "key1=value1&=&key2=value2"
+        let parameters = urlString.queryParameters
+
+        #expect(parameters.count == 2)
+        #expect(parameters["key1"] == "value1")
+        #expect(parameters["key2"] == "value2")
+    }
 }

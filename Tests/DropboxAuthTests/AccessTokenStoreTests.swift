@@ -415,6 +415,7 @@ import Testing
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
 					kSecValueData: CFData.mock(accountID: accountID),
+					kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock,
 					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
@@ -446,7 +447,8 @@ import Testing
 					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(attributesToUpdate == [
-					kSecValueData: CFData.mock(accountID: accountID)
+					kSecValueData: CFData.mock(accountID: accountID),
+					kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock,
 				] as CFDictionary)
 
 				return noErr
@@ -497,6 +499,7 @@ import Testing
 					kSecClass: kSecClassGenericPassword,
 					kSecAttrAccount: accountID,
 					kSecValueData: CFData.mock(accountID: accountID),
+					kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock,
 					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(result?.pointee == nil)
@@ -533,7 +536,8 @@ import Testing
 					kSecAttrService: expectedService
 				] as CFDictionary)
 				#expect(attributesToUpdate == [
-					kSecValueData: CFData.mock(accountID: accountID)
+					kSecValueData: CFData.mock(accountID: accountID),
+					kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock,
 				] as CFDictionary)
 
 				return 12345
@@ -624,6 +628,101 @@ import Testing
 		} catch let error as AccessTokenStore.OSStatusError {
 			#expect(error.status == 12345)
 		}
+	}
+
+	// MARK: AccessTokenStore accessibility
+
+	@Test func saveSetsAccessibilityOnAdd() throws {
+		let recorded = Box()
+		let store = AccessTokenStore.mock(
+			copyMatching: { _, _ in AccessTokenStore.OSStatusError.missing.status },
+			add: { attributes, _ in
+				recorded.append(attributes as NSDictionary)
+				return noErr
+			}
+		)
+
+		try store.save(.mock())
+
+		let attributes = try #require(recorded.values.first)
+		#expect(attributes[kSecAttrAccessible as String] as? String == kSecAttrAccessibleAfterFirstUnlock as String)
+	}
+
+	@Test func saveSetsAccessibilityOnUpdate() throws {
+		let recorded = Box()
+		let store = AccessTokenStore.mock(
+			copyMatching: { _, _ in noErr },
+			update: { _, attributesToUpdate in
+				recorded.append(attributesToUpdate as NSDictionary)
+				return noErr
+			}
+		)
+
+		try store.save(.mock())
+
+		let attributes = try #require(recorded.values.first)
+		#expect(attributes[kSecAttrAccessible as String] as? String == kSecAttrAccessibleAfterFirstUnlock as String)
+	}
+
+	@Test func updateAccessibilityRewritesAllItems() throws {
+		let recorded = Box()
+		let store = AccessTokenStore.mock(
+			update: { _, attributesToUpdate in
+				recorded.append(attributesToUpdate as NSDictionary)
+				return noErr
+			}
+		)
+
+		try store.updateAccessibility()
+
+		let attributes = try #require(recorded.values.first)
+		#expect(attributes[kSecAttrAccessible as String] as? String == kSecAttrAccessibleAfterFirstUnlock as String)
+	}
+
+	@Test func updateAccessibilityToleratesEmptyStore() throws {
+		let store = AccessTokenStore.mock(
+			update: { _, _ in AccessTokenStore.OSStatusError.missing.status }
+		)
+
+		try store.updateAccessibility()
+	}
+
+	// MARK: AccessTokenStore.firstAccessToken()
+
+	@Test func firstAccessTokenReturnsNilWhenEmpty() throws {
+		let store = AccessTokenStore.mock(
+			copyMatching: { _, _ in AccessTokenStore.OSStatusError.missing.status }
+		)
+
+		#expect(try store.firstAccessToken() == nil)
+	}
+
+	@Test func firstAccessTokenThrowsWhenKeychainUnavailable() {
+		let store = AccessTokenStore.mock(
+			copyMatching: { _, _ in errSecInteractionNotAllowed }
+		)
+
+		#expect {
+			try store.firstAccessToken()
+		} throws: { error in
+			(error as? AccessTokenStore.OSStatusError)?.status == errSecInteractionNotAllowed
+		}
+	}
+
+}
+
+/// Thread-safe capture of Keychain attribute dictionaries passed to mocked handlers in a test.
+private final class Box: @unchecked Sendable {
+
+	private let lock = NSLock()
+	private var _values: [NSDictionary] = []
+
+	var values: [NSDictionary] {
+		lock.withLock { _values }
+	}
+
+	func append(_ value: NSDictionary) {
+		lock.withLock { _values.append(value) }
 	}
 
 }

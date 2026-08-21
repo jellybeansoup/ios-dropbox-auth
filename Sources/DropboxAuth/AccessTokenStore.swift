@@ -125,11 +125,11 @@ public final class AccessTokenStore: Sendable {
 	}
 
 	/// An error type representing an OSStatus code returned from Keychain operations.
-	struct OSStatusError: Swift.Error, LocalizedError, Sendable {
+	public struct OSStatusError: Swift.Error, LocalizedError, Sendable {
 
-		var status: OSStatus
+		public var status: OSStatus
 
-		var errorDescription: String? {
+		public var errorDescription: String? {
 			return (SecCopyErrorMessageString(status, nil) as NSString?).map(String.init)
 		}
 
@@ -247,10 +247,14 @@ public final class AccessTokenStore: Sendable {
 		switch lookupStatus {
 		case OSStatusError.missing.status:
 			query.setValue(cfData, forKey: kSecValueData as String)
+			query.setValue(kSecAttrAccessibleAfterFirstUnlock, forKey: kSecAttrAccessible as String)
 			saveStatus = add(query, nil)
 
 		case noErr:
-			saveStatus = update(query, NSDictionary(dictionary: [kSecValueData: cfData]) as CFDictionary)
+			saveStatus = update(query, NSDictionary(dictionary: [
+				kSecValueData: cfData,
+				kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock,
+			]) as CFDictionary)
 
 		default:
 			throw OSStatusError(status: lookupStatus)
@@ -259,6 +263,56 @@ public final class AccessTokenStore: Sendable {
 		if saveStatus != noErr {
 			throw OSStatusError(status: saveStatus)
 		}
+	}
+
+	/// Ensures every stored token can be read while the device is locked.
+	///
+	/// Tokens are saved with `kSecAttrAccessibleAfterFirstUnlock`, but items written before that
+	/// attribute was applied default to `kSecAttrAccessibleWhenUnlocked` and fail to read during
+	/// locked-device launches. Calling this rewrites the accessibility of all stored items in place.
+	///
+	/// - Throws: An `OSStatusError` if the update fails. An empty store is not an error.
+	public func updateAccessibility() throws {
+		let attributes = NSDictionary(dictionary: [
+			kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock,
+		])
+
+		let status = update(query(with: [:]), attributes as CFDictionary)
+
+		guard status == noErr || status == OSStatusError.missing.status else {
+			throw OSStatusError(status: status)
+		}
+	}
+
+	/// Retrieve the first access token in the store, if any.
+	///
+	/// Unlike `first`, a Keychain failure is thrown rather than reported as an empty store,
+	/// so an unreadable Keychain (such as a locked device) can be told apart from an absent token.
+	///
+	/// - Throws: An `OSStatusError` if the Keychain cannot be read.
+	/// - Returns: The first stored `AccessToken`, or `nil` if the store is empty.
+	public func firstAccessToken() throws -> AccessToken? {
+		let query = self.query(with: [
+			kSecReturnAttributes: kCFBooleanTrue!,
+			kSecMatchLimit: kSecMatchLimitOne,
+		])
+
+		var result: CFTypeRef?
+		let status = copyMatching(query, &result)
+
+		guard status != OSStatusError.missing.status else {
+			return nil
+		}
+
+		guard status == noErr else {
+			throw OSStatusError(status: status)
+		}
+
+		guard let result = result as? NSDictionary, let accountID = result[kSecAttrAccount] as? String else {
+			return nil
+		}
+
+		return try accessToken(for: accountID)
 	}
 
 	/// Delete a specific access token from the store.
